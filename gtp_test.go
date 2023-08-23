@@ -7,12 +7,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func TestProxy(t *testing.T) {
 	t.Run("proxy without any custom handler functions forwards a request with headers to the underlying endpoint",
 		func(t *testing.T) {
 			const expectedResponse = "ok"
+			done := make(chan struct{})
 			backendEndpoint := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				expected := requestStub(t, "http://excluded-from-test")
 				actual := r
@@ -21,6 +23,7 @@ func TestProxy(t *testing.T) {
 				if err != nil {
 					t.Fatalf("write response in backend endpoint: %s", err)
 				}
+				done <- struct{}{}
 			})
 			backend := httptest.NewServer(backendEndpoint)
 			defer backend.Close()
@@ -49,6 +52,12 @@ func TestProxy(t *testing.T) {
 
 			if string(response) != expectedResponse {
 				t.Fatalf("response not equal: %s, %s", expectedResponse, string(response))
+			}
+
+			select {
+			case <-time.After(300 * time.Millisecond):
+				t.Fatalf("timeout reached")
+			case <-done:
 			}
 		})
 }

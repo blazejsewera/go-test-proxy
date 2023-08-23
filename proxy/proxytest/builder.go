@@ -23,24 +23,28 @@ func (b *TestServerBuilder) Build() *httptest.Server {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		targetURL, err := url.Parse(b.target)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "url parse error")
+			fmt.Fprintf(os.Stderr, "url parse: %s\n", err)
 			return
 		}
 		clonedRequest := r.Clone(context.Background())
+		clonedRequest.RequestURI = ""
 		clonedRequest.URL.Host = targetURL.Host
-		fmt.Printf("%v", clonedRequest)
 
 		response, err := http.DefaultClient.Do(clonedRequest)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "response error")
+			fmt.Fprintf(os.Stderr, "response: %s\n", err)
 			return
 		}
 		bytes, err := io.ReadAll(response.Body)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "response reading error")
+			fmt.Fprintf(os.Stderr, "response reading: %s\n", err)
 			return
 		}
-		_, _ = w.Write(bytes)
+		_, err = w.Write(bytes)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "response writing: %s\n", err)
+			return
+		}
 	})
 
 	return httptest.NewUnstartedServer(handler)
