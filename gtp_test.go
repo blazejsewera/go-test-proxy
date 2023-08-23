@@ -1,7 +1,9 @@
 package gtp_test
 
 import (
+	"github.com/blazejsewera/go-test-proxy/proxy/proxytest"
 	"github.com/blazejsewera/go-test-proxy/requests"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,29 +12,44 @@ import (
 func TestProxy(t *testing.T) {
 	t.Run("proxy without any custom handler functions forwards a request with headers to the underlying endpoint",
 		func(t *testing.T) {
-			// given
+			const expectedResponse = "ok"
 			backendEndpoint := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				expected := requestStub(t, "http://excluded-from-test")
 				actual := r
 				requests.AssertEqualExcludingHost(t, expected, actual)
+				_, err := w.Write([]byte(expectedResponse))
+				if err != nil {
+					t.Fatalf("write response in backend endpoint: %s", err)
+				}
 			})
 			backend := httptest.NewServer(backendEndpoint)
-			backend.Start()
+			defer backend.Close()
 
-			var tested *http.Server = gtptest.Builder().
+			var tested = proxytest.Builder().
 				WithTarget(backend.URL).
 				Build()
 
 			backend.Client()
-			var client *http.Client = tested.Client()
 
 			tested.Start()
+			defer tested.Close()
 
-			// when
-			var baseURL string = tested.URL
-			headers := map[string]string{"X-Test-Header": "Test-Value"}
-			request := requestStub(t, baseURL)
-			client.Do(request)
+			var client = tested.Client()
+			request := requestStub(t, tested.URL)
+
+			responseStruct, err1 := client.Do(request)
+			response, err2 := io.ReadAll(responseStruct.Body)
+
+			if err1 != nil {
+				t.Fatalf("request to tested: %s", err1)
+			}
+			if err2 != nil {
+				t.Fatalf("reading response: %s", err2)
+			}
+
+			if string(response) != expectedResponse {
+				t.Fatalf("response not equal: %s, %s", expectedResponse, string(response))
+			}
 		})
 }
 
