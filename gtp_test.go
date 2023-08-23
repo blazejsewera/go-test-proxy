@@ -1,6 +1,7 @@
 package gtp_test
 
 import (
+	"errors"
 	"github.com/blazejsewera/go-test-proxy/proxy/proxytest"
 	"github.com/blazejsewera/go-test-proxy/requests"
 	"io"
@@ -43,11 +44,8 @@ func TestProxy(t *testing.T) {
 			responseStruct, err1 := client.Do(request)
 			response, err2 := io.ReadAll(responseStruct.Body)
 
-			if err1 != nil {
+			if err := errors.Join(err1, err2); err != nil {
 				t.Fatalf("request to tested: %s", err1)
-			}
-			if err2 != nil {
-				t.Fatalf("reading response: %s", err2)
 			}
 
 			if string(response) != expectedResponse {

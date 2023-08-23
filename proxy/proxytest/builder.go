@@ -28,6 +28,7 @@ func (b *TestServerBuilder) Build() *httptest.Server {
 		}
 		clonedRequest := r.Clone(context.Background())
 		clonedRequest.RequestURI = ""
+		clonedRequest.URL.Scheme = "http"
 		clonedRequest.URL.Host = targetURL.Host
 
 		response, err := http.DefaultClient.Do(clonedRequest)
