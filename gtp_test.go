@@ -11,29 +11,16 @@ import (
 	"time"
 )
 
+const expectedResponse = "ok"
+
 func TestProxy(t *testing.T) {
 	t.Run("proxy without any custom handler functions forwards a request with headers to the underlying endpoint",
 		func(t *testing.T) {
-			const expectedResponse = "ok"
-			done := make(chan struct{})
-			backendEndpoint := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				expected := requestStub(t, "http://excluded-from-test")
-				actual := r
-				requests.AssertEqualExcludingHost(t, expected, actual)
-				_, err := w.Write([]byte(expectedResponse))
-				if err != nil {
-					t.Fatalf("write response in backend endpoint: %s", err)
-				}
-				done <- struct{}{}
-			})
-			backend := httptest.NewServer(backendEndpoint)
-			defer backend.Close()
+			backendURL, done := backendServer(t)
 
 			var tested = proxytest.Builder().
-				WithTarget(backend.URL).
+				WithTarget(<-backendURL).
 				Build()
-
-			backend.Client()
 
 			tested.Start()
 			defer tested.Close()
@@ -58,6 +45,31 @@ func TestProxy(t *testing.T) {
 			case <-done:
 			}
 		})
+}
+
+func backendServer(t testing.TB) (url chan string, done chan struct{}) {
+	url = make(chan string)
+	done = make(chan struct{})
+
+	backendEndpoint := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		expected := requestStub(t, "http://excluded-from-test")
+		actual := r
+		requests.AssertEqualExcludingHost(t, expected, actual)
+		_, err := w.Write([]byte(expectedResponse))
+		if err != nil {
+			t.Fatalf("write response in backend endpoint: %s", err)
+		}
+		done <- struct{}{}
+	})
+
+	backend := httptest.NewUnstartedServer(backendEndpoint)
+
+	go func() {
+		backend.Start()
+		url <- backend.URL
+	}()
+
+	return url, done
 }
 
 func requestStub(t testing.TB, baseURL string) *http.Request {

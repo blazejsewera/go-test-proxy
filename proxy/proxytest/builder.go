@@ -1,13 +1,11 @@
 package proxytest
 
 import (
-	"context"
-	"fmt"
+	"github.com/blazejsewera/go-test-proxy/urls"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
-	"os"
 )
 
 type TestServerBuilder struct {
@@ -15,35 +13,34 @@ type TestServerBuilder struct {
 }
 
 func (b *TestServerBuilder) WithTarget(url string) *TestServerBuilder {
+	log.Printf("b.target = %s\n", b.target)
 	b.target = url
 	return b
 }
 
 func (b *TestServerBuilder) Build() *httptest.Server {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		targetURL, err := url.Parse(b.target)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "url parse: %s\n", err)
-			return
-		}
-		clonedRequest := r.Clone(context.Background())
-		clonedRequest.RequestURI = ""
-		clonedRequest.URL.Scheme = "http"
-		clonedRequest.URL.Host = targetURL.Host
+		targetURL := urls.ForwardedURL(b.target, r.URL)
+		log.Printf("b.target = %s; target = %s; r = %v", b.target, targetURL, r)
 
-		response, err := http.DefaultClient.Do(clonedRequest)
+		r.Host = targetURL.Host
+		r.RequestURI = ""
+		r.URL = targetURL
+
+		response, err := http.DefaultClient.Do(r)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "response: %s\n", err)
+			log.Printf("%v\n", targetURL)
+			log.Printf("response: %s\n", err)
 			return
 		}
 		bytes, err := io.ReadAll(response.Body)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "response reading: %s\n", err)
+			log.Printf("response reading: %s\n", err)
 			return
 		}
 		_, err = w.Write(bytes)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "response writing: %s\n", err)
+			log.Printf("response writing: %s\n", err)
 			return
 		}
 	})
