@@ -47,7 +47,7 @@ func TestProxy(t *testing.T) {
 
 func backendServer(t testing.TB) (url string, closeServer func()) {
 	backendEndpoint := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		expected := requestStub(t, "http://excluded-from-test")
+		expected := requestStub(t, "")
 		actual := r
 		err := requests.AssertEqualExcludingHost(expected, actual)
 		if err != nil {
