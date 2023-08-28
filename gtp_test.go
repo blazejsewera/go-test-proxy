@@ -1,7 +1,6 @@
 package gtp_test
 
 import (
-	"errors"
 	"github.com/blazejsewera/go-test-proxy/proxy/proxytest"
 	"github.com/blazejsewera/go-test-proxy/requests"
 	"io"
@@ -27,14 +26,19 @@ func TestProxy(t *testing.T) {
 
 			var client = tested.Client()
 			request := requestStub(t, tested.URL)
-
-			responseStruct, err1 := client.Do(request)
-			response, err2 := io.ReadAll(responseStruct.Body)
-
-			if err := errors.Join(err1, err2); err != nil {
-				t.Fatalf("request to tested: %s", err1)
+			responseStruct, err := client.Do(request)
+			if err != nil {
+				t.Fatal("send request: ", err)
 			}
 
+			response, err := io.ReadAll(responseStruct.Body)
+			if err != nil {
+				t.Fatal("read request: ", err)
+			}
+
+			if responseStruct.StatusCode != http.StatusOK {
+				t.Fatal("response status code not OK: ", responseStruct.StatusCode)
+			}
 			if string(response) != expectedResponse {
 				t.Fatalf("response not equal: %s, %s", expectedResponse, string(response))
 			}
@@ -52,7 +56,7 @@ func backendServer(t testing.TB) (url string, closeServer func()) {
 		}
 		_, err = w.Write([]byte(expectedResponse))
 		if err != nil {
-			t.Fatalf("write response in backend endpoint: %s", err)
+			t.Fatal("write response in backend endpoint: ", err)
 		}
 	})
 
@@ -64,7 +68,7 @@ func badRequest(t testing.TB, w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusBadRequest)
 	_, err = w.Write([]byte(err.Error()))
 	if err != nil {
-		t.Fatal("write response in backend:", err)
+		t.Fatal("write response in backend: ", err)
 	}
 	return
 }

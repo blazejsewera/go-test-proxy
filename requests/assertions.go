@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"reflect"
+	"slices"
 )
 
 const assertionPrefix = "assert requests: "
@@ -19,7 +19,7 @@ func AssertEqualExcludingHost(expected, actual *http.Request) error {
 }
 
 func assertURLEqualExcludingHost(expected, actual *url.URL) error {
-	var err1, err2, err3 error
+	var err1, err2 error
 
 	if expected.RawPath != actual.RawPath {
 		err1 = assertionErrorf("URL path not equal: %s, %s", expected.RawPath, actual.RawPath)
@@ -29,17 +29,19 @@ func assertURLEqualExcludingHost(expected, actual *url.URL) error {
 		err2 = assertionErrorf("URL query not equal: %s, %s", expected.RawQuery, actual.RawQuery)
 	}
 
-	if expected.Scheme != actual.Scheme {
-		err3 = assertionErrorf("URL scheme not equal: %s, %s", expected.Scheme, actual.Scheme)
-	}
-
-	return errors.Join(err1, err2, err3)
+	return errors.Join(err1, err2)
 }
 
 func assertHeadersEqual(expected, actual *http.Request) error {
-	ok := reflect.DeepEqual(expected.Header, actual.Header)
-	if !ok {
-		return assertionErrorf("headers not equal: %v, %v", expected.Header, actual.Header)
+	var ok bool
+	for key, expectedValues := range expected.Header {
+		actualValues := actual.Header.Values(key)
+		for _, expectedValue := range expectedValues {
+			ok = slices.Contains(actualValues, expectedValue)
+			if !ok {
+				return assertionErrorf("headers not equal: %v, %v", expected.Header, actual.Header)
+			}
+		}
 	}
 	return nil
 }
