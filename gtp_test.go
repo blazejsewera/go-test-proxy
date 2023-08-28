@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 )
 
 const expectedResponse = "ok"
@@ -16,10 +15,11 @@ const expectedResponse = "ok"
 func TestProxy(t *testing.T) {
 	t.Run("proxy without any custom handler functions forwards a request with headers to the underlying endpoint",
 		func(t *testing.T) {
-			backendURL, done := backendServer(t)
+			backendURL, closeBackend := backendServer(t)
+			defer closeBackend()
 
 			var tested = proxytest.Builder().
-				WithTarget(<-backendURL).
+				WithTarget(backendURL).
 				Build()
 
 			tested.Start()
@@ -38,38 +38,35 @@ func TestProxy(t *testing.T) {
 			if string(response) != expectedResponse {
 				t.Fatalf("response not equal: %s, %s", expectedResponse, string(response))
 			}
-
-			select {
-			case <-time.After(300 * time.Millisecond):
-				t.Fatalf("timeout reached")
-			case <-done:
-			}
 		})
 }
 
-func backendServer(t testing.TB) (url chan string, done chan struct{}) {
-	url = make(chan string)
-	done = make(chan struct{})
-
+func backendServer(t testing.TB) (url string, closeServer func()) {
 	backendEndpoint := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		expected := requestStub(t, "http://excluded-from-test")
 		actual := r
-		requests.AssertEqualExcludingHost(t, expected, actual)
-		_, err := w.Write([]byte(expectedResponse))
+		err := requests.AssertEqualExcludingHost(expected, actual)
+		if err != nil {
+			badRequest(t, w, err)
+			return
+		}
+		_, err = w.Write([]byte(expectedResponse))
 		if err != nil {
 			t.Fatalf("write response in backend endpoint: %s", err)
 		}
-		done <- struct{}{}
 	})
 
-	backend := httptest.NewUnstartedServer(backendEndpoint)
+	backend := httptest.NewServer(backendEndpoint)
+	return backend.URL, backend.Close
+}
 
-	go func() {
-		backend.Start()
-		url <- backend.URL
-	}()
-
-	return url, done
+func badRequest(t testing.TB, w http.ResponseWriter, err error) {
+	w.WriteHeader(http.StatusBadRequest)
+	_, err = w.Write([]byte(err.Error()))
+	if err != nil {
+		t.Fatal("write response in backend:", err)
+	}
+	return
 }
 
 func requestStub(t testing.TB, baseURL string) *http.Request {

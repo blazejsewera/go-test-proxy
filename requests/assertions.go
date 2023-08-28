@@ -1,75 +1,75 @@
 package requests
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"reflect"
-	"testing"
 )
 
-const assertionPrefix = "assert requests equal: "
+const assertionPrefix = "assert requests: "
 
-func AssertEqualExcludingHost(t testing.TB, expected, actual *http.Request) {
-	t.Helper()
-
-	assertURLEqualExcludingHost(t, expected.URL, actual.URL)
-	assertHeadersEqual(t, expected, actual)
-	assertBodyEqual(t, expected, actual)
+func AssertEqualExcludingHost(expected, actual *http.Request) error {
+	err1 := assertURLEqualExcludingHost(expected.URL, actual.URL)
+	err2 := assertHeadersEqual(expected, actual)
+	err3 := assertBodyEqual(expected, actual)
+	return errors.Join(err1, err2, err3)
 }
 
-func assertURLEqualExcludingHost(t testing.TB, expected, actual *url.URL) {
-	t.Helper()
+func assertURLEqualExcludingHost(expected, actual *url.URL) error {
+	var err1, err2, err3 error
 
-	ok := expected.RawPath == actual.RawPath
-	if !ok {
-		assertionErrorf(t, "URL path not equal: %s, %s", expected.RawPath, actual.RawPath)
+	if expected.RawPath != actual.RawPath {
+		err1 = assertionErrorf("URL path not equal: %s, %s", expected.RawPath, actual.RawPath)
 	}
 
-	ok = expected.RawQuery == actual.RawQuery
-	if !ok {
-		assertionErrorf(t, "URL query not equal: %s, %s", expected.RawQuery, actual.RawQuery)
+	if expected.RawQuery != actual.RawQuery {
+		err2 = assertionErrorf("URL query not equal: %s, %s", expected.RawQuery, actual.RawQuery)
 	}
 
-	ok = expected.Scheme == actual.Scheme
-	if !ok {
-		assertionErrorf(t, "URL scheme not equal: %s, %s", expected.Scheme, actual.Scheme)
+	if expected.Scheme != actual.Scheme {
+		err3 = assertionErrorf("URL scheme not equal: %s, %s", expected.Scheme, actual.Scheme)
 	}
+
+	return errors.Join(err1, err2, err3)
 }
 
-func assertHeadersEqual(t testing.TB, expected, actual *http.Request) {
-	t.Helper()
+func assertHeadersEqual(expected, actual *http.Request) error {
 	ok := reflect.DeepEqual(expected.Header, actual.Header)
 	if !ok {
-		assertionErrorf(t, "headers not equal: %v, %v", expected.Header, actual.Header)
+		return assertionErrorf("headers not equal: %v, %v", expected.Header, actual.Header)
 	}
+	return nil
 }
 
-func assertBodyEqual(t testing.TB, expected, actual *http.Request) {
-	t.Helper()
+func assertBodyEqual(expected, actual *http.Request) error {
+	var err1, err2, err3 error
+
 	expectedBodyBytes, err := io.ReadAll(expected.Body)
 	if err != nil {
-		assertionFatalf(t, "read expected body: %s", err)
+		err1 = assertionFatalf("read expected body: %s", err)
 	}
+
 	actualBodyBytes, err := io.ReadAll(actual.Body)
 	if err != nil {
-		assertionFatalf(t, "read actual body: %s", err)
+		err2 = assertionFatalf("read actual body: %s", err)
 	}
+
 	expectedBody := string(expectedBodyBytes)
 	actualBody := string(actualBodyBytes)
-
-	ok := expectedBody == actualBody
-	if !ok {
-		assertionErrorf(t, "body not equal: %s, %s", expectedBody, actualBody)
+	if expectedBody != actualBody {
+		err3 = assertionErrorf("body not equal: %s, %s", expectedBody, actualBody)
 	}
+
+	return errors.Join(err1, err2, err3)
 }
 
-func assertionErrorf(t testing.TB, format string, args ...any) {
-	t.Helper()
-	t.Errorf(assertionPrefix+format, args...)
+func assertionErrorf(format string, args ...any) error {
+	return fmt.Errorf(assertionPrefix+format, args...)
 }
 
-func assertionFatalf(t testing.TB, format string, args ...any) {
-	t.Helper()
-	t.Errorf(assertionPrefix+format, args...)
+func assertionFatalf(format string, args ...any) error {
+	return fmt.Errorf(assertionPrefix+"fatal: "+format, args...)
 }
