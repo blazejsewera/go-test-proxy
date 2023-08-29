@@ -1,4 +1,4 @@
-package gtp_test
+package proxy_test
 
 import (
 	"github.com/blazejsewera/go-test-proxy/proxy/proxytest"
