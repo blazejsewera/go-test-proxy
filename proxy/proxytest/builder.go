@@ -9,6 +9,7 @@ import (
 
 type TestServerBuilder struct {
 	target string
+	router http.ServeMux
 }
 
 func (b *TestServerBuilder) WithTarget(url string) *TestServerBuilder {
@@ -40,6 +41,10 @@ func (b *TestServerBuilder) Build() *httptest.Server {
 	})
 
 	return httptest.NewUnstartedServer(handler)
+}
+
+func (b *TestServerBuilder) WithHandler(path string, customHandler http.HandlerFunc) *TestServerBuilder {
+	panic("not yet implemented")
 }
 
 func Builder() *TestServerBuilder {
