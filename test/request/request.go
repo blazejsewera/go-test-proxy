@@ -32,6 +32,10 @@ func ReferenceHeader() http.Header {
 	return http.Header{"X-Test-Header": []string{"Test-Value"}}
 }
 
+func ReferenceResponseHeader() http.Header {
+	return http.Header{"X-Response-Test-Header": []string{"Test-Value"}}
+}
+
 func ReferenceBody() string {
 	return "body"
 }

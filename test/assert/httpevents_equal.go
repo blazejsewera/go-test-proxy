@@ -28,7 +28,7 @@ func HTTPEventsEqual(t testing.TB, expected, actual []proxy.HTTPEvent) {
 		errs = append(errs, assertString("path", expectedEvent.Path, actualEvent.Path))
 		errs = append(errs, assertString("query", expectedEvent.Query, actualEvent.Query))
 		errs = append(errs, assertInt("status", expectedEvent.Status, actualEvent.Status))
-		errs = append(errs, assertHeaderContainsExpected("header", expectedEvent.Header, actualEvent.Header))
+		errs = append(errs, assertHeaderContainsExpected(expectedEvent.Header, actualEvent.Header))
 	}
 
 	if err := errors.Join(errs...); err != nil {
@@ -37,20 +37,8 @@ func HTTPEventsEqual(t testing.TB, expected, actual []proxy.HTTPEvent) {
 	}
 }
 
-func assertHeaderContainsExpected(name string, expected map[string][]string, actual map[string][]string) error {
-	for key, expectedValues := range expected {
-		actualValues, ok := actual[key]
-		if !ok {
-			return fmt.Errorf("%s: key '%s' not found in actual headers", name, key)
-		}
-		expectedValuesJSON := marshalIndent(expectedValues)
-		actualValuesJSON := marshalIndent(actualValues)
-
-		if expectedValuesJSON != actualValuesJSON {
-			return fmt.Errorf("%s: not equal for key '%s'\nexpected = %s\nactual = %s", name, key, expectedValuesJSON, actualValuesJSON)
-		}
-	}
-	return nil
+func assertHeaderContainsExpected(expected map[string][]string, actual map[string][]string) error {
+	return HeaderContainsExpected(expected, actual)
 }
 
 func assertString(name, expected, actual string) error {

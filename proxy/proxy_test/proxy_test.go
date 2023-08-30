@@ -48,7 +48,7 @@ func TestProxy(t *testing.T) {
 			}
 			responseEvent := proxy.HTTPEvent{
 				EventType: proxy.ResponseEventType,
-				Header:    request.ReferenceHeader(),
+				Header:    request.ReferenceResponseHeader(),
 				Body:      requestPath,
 				Status:    http.StatusOK,
 			}

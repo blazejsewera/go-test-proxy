@@ -3,6 +3,7 @@ package proxy
 import (
 	"bytes"
 	"fmt"
+	"github.com/blazejsewera/go-test-proxy/header"
 	"github.com/blazejsewera/go-test-proxy/urls"
 	"io"
 	"net/http"
@@ -39,7 +40,6 @@ func (b *Builder) WithProxyTarget(url string) *Builder {
 		r.Host = targetURL.Host
 		r.RequestURI = ""
 		r.URL = targetURL
-		r.Header.Clone()
 
 		response, err := http.DefaultClient.Do(r)
 		if err != nil {
@@ -53,6 +53,7 @@ func (b *Builder) WithProxyTarget(url string) *Builder {
 		if err != nil {
 			return
 		}
+		header.CloneToResponseWriter(response.Header, w)
 	}
 
 	return b.WithHandlerFunc("/", proxyHandler)
@@ -60,7 +61,6 @@ func (b *Builder) WithProxyTarget(url string) *Builder {
 
 type ResponseWriterInterceptor struct {
 	w          http.ResponseWriter
-	header     http.Header
 	bodyBuffer *bytes.Buffer
 	statusCode int
 }
@@ -85,6 +85,7 @@ func (i *ResponseWriterInterceptor) Write(body []byte) (int, error) {
 
 func (i *ResponseWriterInterceptor) WriteHeader(statusCode int) {
 	i.statusCode = statusCode
+	i.w.WriteHeader(statusCode)
 }
 
 func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.ResponseWriter, r *http.Request)) *Builder {
@@ -98,7 +99,6 @@ func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.Respon
 		if err != nil {
 			return
 		}
-		w.WriteHeader(interceptor.statusCode)
 	})
 	b.Router.Handle(pattern, wrapperFunc)
 	return b
@@ -108,7 +108,7 @@ func responseHTTPEvent(interceptor *ResponseWriterInterceptor) HTTPEvent {
 	body := interceptor.bodyBuffer.String()
 	return HTTPEvent{
 		EventType: ResponseEventType,
-		Header:    copyHeader(interceptor.header),
+		Header:    header.Clone(interceptor.w.Header()),
 		Body:      body,
 		Status:    interceptor.statusCode,
 	}
@@ -119,22 +119,12 @@ func requestHTTPEvent(r *http.Request) HTTPEvent {
 	r.Body = bodyReader
 	return HTTPEvent{
 		EventType: RequestEventType,
-		Header:    copyHeader(r.Header),
+		Header:    header.Clone(r.Header),
 		Body:      body,
 		Method:    r.Method,
 		Path:      r.URL.Path,
 		Query:     r.URL.RawQuery,
 	}
-}
-
-func copyHeader(source map[string][]string) map[string][]string {
-	target := make(map[string][]string)
-	for key, sourceValues := range source {
-		targetValues := make([]string, len(sourceValues))
-		copy(targetValues, sourceValues)
-		target[key] = targetValues
-	}
-	return target
 }
 
 func bodyToStringAndReader(body io.ReadCloser) (string, io.ReadCloser) {

@@ -1,6 +1,7 @@
 package proxy_test
 
 import (
+	"github.com/blazejsewera/go-test-proxy/header"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
 	"github.com/blazejsewera/go-test-proxy/test/must"
 	"github.com/blazejsewera/go-test-proxy/test/request"
@@ -26,6 +27,7 @@ func PathEchoServer() (url string, closeServer func()) {
 			badRequest(w, err)
 			return
 		}
+		header.CloneToResponseWriter(request.ReferenceResponseHeader(), w)
 		must.Succeed(w.Write([]byte(r.URL.Path)))
 	})
 

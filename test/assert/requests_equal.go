@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"slices"
 )
 
 const assertionPrefix = "assert requests: "
@@ -33,17 +32,7 @@ func assertURLEqualExcludingHost(expected, actual *url.URL) error {
 }
 
 func assertHeadersEqual(expected, actual *http.Request) error {
-	var ok bool
-	for key, expectedValues := range expected.Header {
-		actualValues := actual.Header.Values(key)
-		for _, expectedValue := range expectedValues {
-			ok = slices.Contains(actualValues, expectedValue)
-			if !ok {
-				return assertionErrorf("headers not equal: %v, %v", expected.Header, actual.Header)
-			}
-		}
-	}
-	return nil
+	return HeaderContainsExpected(expected.Header, actual.Header)
 }
 
 func assertBodyEqual(expected, actual *http.Request) error {
