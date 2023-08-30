@@ -18,7 +18,7 @@ type Builder struct {
 func NewBuilder() *Builder {
 	return &Builder{
 		port:    8080,
-		Monitor: NoopMonitor{},
+		Monitor: DefaultMonitor{},
 		Router:  http.NewServeMux(),
 	}
 }

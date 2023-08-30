@@ -1,5 +1,10 @@
 package proxy
 
+import (
+	"encoding/json"
+	"log"
+)
+
 type EventType string
 
 const (
@@ -27,11 +32,23 @@ type HTTPEvent struct {
 }
 
 type Monitor interface {
-	HTTPEvent(e HTTPEvent)
+	HTTPEvent(event HTTPEvent)
+	Err(err error)
 }
 
-type NoopMonitor struct{}
+type DefaultMonitor struct{}
 
-var _ Monitor = NoopMonitor{}
+var _ Monitor = DefaultMonitor{}
 
-func (n NoopMonitor) HTTPEvent(HTTPEvent) {}
+func (n DefaultMonitor) HTTPEvent(event HTTPEvent) {
+	eventJSONBytes, err := json.MarshalIndent(event, "", "\t")
+	if err != nil {
+		n.Err(err)
+		return
+	}
+	log.Println(string(eventJSONBytes))
+}
+
+func (n DefaultMonitor) Err(err error) {
+	log.Println(err)
+}

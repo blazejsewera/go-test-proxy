@@ -59,6 +59,7 @@ func TestProxy(t *testing.T) {
 			_ = must.Succeed(client.Do(request.New(tested.URL, requestPath)))
 
 			assert.HTTPEventsEqual(t, expected, monitor.Events)
+			assert.Empty(t, monitor.Errors)
 		})
 	})
 
@@ -125,6 +126,7 @@ func TestProxy(t *testing.T) {
 			_ = must.Succeed(client.Do(request.New(tested.URL, customPath)))
 
 			assert.HTTPEventsEqual(t, expected, monitor.Events)
+			assert.Empty(t, monitor.Errors)
 		})
 	})
 }
