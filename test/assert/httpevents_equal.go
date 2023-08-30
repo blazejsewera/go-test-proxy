@@ -38,7 +38,7 @@ func HTTPEventsEqual(t testing.TB, expected, actual []proxy.HTTPEvent) {
 }
 
 func assertHeaderContainsExpected(expected map[string][]string, actual map[string][]string) error {
-	return HeaderContainsExpected(expected, actual)
+	return HeaderContainsExpectedToErr(expected, actual)
 }
 
 func assertString(name, expected, actual string) error {

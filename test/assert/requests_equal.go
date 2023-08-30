@@ -32,7 +32,7 @@ func assertURLEqualExcludingHost(expected, actual *url.URL) error {
 }
 
 func assertHeadersEqual(expected, actual *http.Request) error {
-	return HeaderContainsExpected(expected.Header, actual.Header)
+	return HeaderContainsExpectedToErr(expected.Header, actual.Header)
 }
 
 func assertBodyEqual(expected, actual *http.Request) error {

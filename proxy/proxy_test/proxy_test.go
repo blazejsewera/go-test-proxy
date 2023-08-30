@@ -1,6 +1,7 @@
 package proxy_test
 
 import (
+	"github.com/blazejsewera/go-test-proxy/header"
 	"github.com/blazejsewera/go-test-proxy/proxy"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
 	"github.com/blazejsewera/go-test-proxy/test/must"
@@ -33,6 +34,7 @@ func TestProxy(t *testing.T) {
 			assert.Equal(t, http.StatusOK, response.StatusCode)
 			body := must.Succeed(io.ReadAll(response.Body))
 			assert.Equal(t, requestPath, string(body))
+			assert.HeaderContainsExpected(t, request.ReferenceResponseHeader(), response.Header)
 		})
 
 		t.Run("monitors forwarded request and response", func(t *testing.T) {
@@ -66,7 +68,9 @@ func TestProxy(t *testing.T) {
 
 		customPath := "/customPath"
 		customResponseBody := "customResponseBody"
+		customResponseHeader := http.Header{"X-Custom-Header": []string{"Custom-Value"}}
 		customHandler := func(w http.ResponseWriter, r *http.Request) {
+			header.CloneToResponseWriter(customResponseHeader, w)
 			must.Succeed(w.Write([]byte(customResponseBody)))
 		}
 
@@ -87,6 +91,7 @@ func TestProxy(t *testing.T) {
 			assert.Equal(t, http.StatusOK, response.StatusCode)
 			body := must.Succeed(io.ReadAll(response.Body))
 			assert.Equal(t, customResponseBody, string(body))
+			assert.HeaderContainsExpected(t, customResponseHeader, response.Header)
 		})
 
 		t.Run("forwards a request with headers to the underlying backend server for a different path", func(t *testing.T) {
@@ -96,6 +101,7 @@ func TestProxy(t *testing.T) {
 			assert.Equal(t, http.StatusOK, response.StatusCode)
 			body := must.Succeed(io.ReadAll(response.Body))
 			assert.Equal(t, requestPath, string(body))
+			assert.HeaderContainsExpected(t, request.ReferenceResponseHeader(), response.Header)
 		})
 
 		t.Run("monitors request and response handled by custom handler", func(t *testing.T) {

@@ -3,9 +3,17 @@ package assert
 import (
 	"fmt"
 	"slices"
+	"testing"
 )
 
-func HeaderContainsExpected(expected, actual map[string][]string) error {
+func HeaderContainsExpected(t testing.TB, expected, actual map[string][]string) {
+	t.Helper()
+	if err := HeaderContainsExpectedToErr(expected, actual); err != nil {
+		t.Error(err)
+	}
+}
+
+func HeaderContainsExpectedToErr(expected, actual map[string][]string) error {
 	for key, expectedValues := range expected {
 		actualValues, ok := actual[key]
 		if !ok {
