@@ -17,7 +17,7 @@ type Builder struct {
 
 func NewBuilder() *Builder {
 	return &Builder{
-		port:    8080,
+		port:    8000,
 		Monitor: DefaultMonitor{},
 		Router:  http.NewServeMux(),
 	}
@@ -37,23 +37,23 @@ func (b *Builder) WithProxyTarget(url string) *Builder {
 	proxyHandler := func(w http.ResponseWriter, r *http.Request) {
 		targetURL := urls.ForwardedURL(url, r.URL)
 
-		r.Host = targetURL.Host
 		r.RequestURI = ""
+		r.Host = targetURL.Host
 		r.URL = targetURL
 
 		response, err := http.DefaultClient.Do(r)
 		if err != nil {
-			b.Monitor.Err(err)
+			b.Monitor.Err(fmt.Errorf("client request to target: %s", err))
 			return
 		}
 		bodyBytes, err := io.ReadAll(response.Body)
 		if err != nil {
-			b.Monitor.Err(err)
+			b.Monitor.Err(fmt.Errorf("read response body from target: %s", err))
 			return
 		}
 		_, err = w.Write(bodyBytes)
 		if err != nil {
-			b.Monitor.Err(err)
+			b.Monitor.Err(fmt.Errorf("write response: %s", err))
 			return
 		}
 		header.CloneToResponseWriter(response.Header, w)
@@ -100,7 +100,7 @@ func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.Respon
 
 		_, err := io.Copy(w, interceptor.bodyBuffer)
 		if err != nil {
-			b.Monitor.Err(err)
+			b.Monitor.Err(fmt.Errorf("copy interceptor buffer to response writer: %s", err))
 			return
 		}
 	})
@@ -134,19 +134,19 @@ func (b *Builder) requestHTTPEvent(r *http.Request) HTTPEvent {
 func (b *Builder) bodyToStringAndReader(body io.ReadCloser) (string, io.ReadCloser) {
 	bodyBytes, err := io.ReadAll(body)
 	if err != nil {
-		b.Monitor.Err(fmt.Errorf("reading body from request: %s", err))
+		b.Monitor.Err(fmt.Errorf("read request body: %s", err))
 		return "ERROR WHEN READING BODY", nil
 	}
 	err = body.Close()
 	if err != nil {
-		b.Monitor.Err(fmt.Errorf("closing body in request: %s", err))
+		b.Monitor.Err(fmt.Errorf("close request body: %s", err))
 		return "ERROR WHEN CLOSING BODY READER", nil
 	}
 	return string(bodyBytes), io.NopCloser(bytes.NewReader(bodyBytes))
 }
 
-func (b *Builder) Build() *Server {
-	return &Server{server: &http.Server{Addr: b.serverAddr(), Handler: b.Router}}
+func (b *Builder) Build() *http.Server {
+	return &http.Server{Addr: b.serverAddr(), Handler: b.Router}
 }
 
 func (b *Builder) serverAddr() string {
