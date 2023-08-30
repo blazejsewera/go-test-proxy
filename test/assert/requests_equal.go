@@ -1,4 +1,4 @@
-package requests
+package assert
 
 import (
 	"errors"
@@ -11,7 +11,7 @@ import (
 
 const assertionPrefix = "assert requests: "
 
-func AssertEqualExcludingHost(expected, actual *http.Request) error {
+func RequestsEqualExcludingPathAndHost(expected, actual *http.Request) error {
 	err1 := assertURLEqualExcludingHost(expected.URL, actual.URL)
 	err2 := assertHeadersEqual(expected, actual)
 	err3 := assertBodyEqual(expected, actual)

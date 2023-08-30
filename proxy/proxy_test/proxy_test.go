@@ -1,46 +1,17 @@
 package proxy_test
 
 import (
-	"github.com/blazejsewera/go-test-proxy/requests"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
 	"github.com/blazejsewera/go-test-proxy/test/must"
+	"github.com/blazejsewera/go-test-proxy/test/request"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 )
 
 func TestProxy(t *testing.T) {
-	testRequest := func(baseURL string) *http.Request {
-		testPath := "/test"
-		headers := map[string]string{"X-Test-Header": "Test-Value"}
-		return requests.MustMakeNewRequest("GET", baseURL+testPath, "body", headers)
-	}
-
-	underlyingBackendServer := func(backendResponse string) (url string, closeBackend func()) {
-		badRequest := func(w http.ResponseWriter, err error) {
-			w.WriteHeader(http.StatusBadRequest)
-			must.Succeed(w.Write([]byte(err.Error())))
-		}
-
-		backendEndpoint := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			expected := testRequest("")
-			actual := r
-			err := requests.AssertEqualExcludingHost(expected, actual)
-			if err != nil {
-				badRequest(w, err)
-				return
-			}
-			must.Succeed(w.Write([]byte(backendResponse)))
-		})
-
-		backend := httptest.NewServer(backendEndpoint)
-		return backend.URL, backend.Close
-	}
-
 	t.Run("proxy without any custom handler", func(t *testing.T) {
-		backendResponse := "ok"
-		backendURL, closeBackend := underlyingBackendServer(backendResponse)
+		backendURL, closeBackend := PathEchoServer()
 		defer closeBackend()
 
 		tested := NewBuilder().
@@ -52,29 +23,28 @@ func TestProxy(t *testing.T) {
 		client := tested.Client()
 
 		t.Run("forwards a request with headers to the underlying backend server", func(t *testing.T) {
-			request := testRequest(tested.URL)
-
-			response := must.Succeed(client.Do(request))
+			requestPath := "/test"
+			response := must.Succeed(client.Do(request.New(tested.URL, requestPath)))
 
 			assert.Equal(t, http.StatusOK, response.StatusCode)
 			body := must.Succeed(io.ReadAll(response.Body))
-			assert.Equal(t, backendResponse, string(body))
+			assert.Equal(t, requestPath, string(body))
 		})
 	})
 
 	t.Run("proxy with a custom handler", func(t *testing.T) {
-		backendResponse := "ok"
-		backendURL, closeBackend := underlyingBackendServer(backendResponse)
+		backendURL, closeBackend := PathEchoServer()
 		defer closeBackend()
 
+		customPath := "/customPath"
 		customResponse := "customResponse"
 		customHandler := func(w http.ResponseWriter, r *http.Request) {
 			must.Succeed(w.Write([]byte(customResponse)))
 		}
 
 		tested := NewBuilder().
+			WithHandlerFunc(customPath, customHandler).
 			WithProxyTarget(backendURL).
-			WithHandlerFunc("/test", customHandler).
 			Build()
 
 		tested.Start()
@@ -82,14 +52,21 @@ func TestProxy(t *testing.T) {
 
 		client := tested.Client()
 
-		t.Run("does not forward a request for a particular path and uses a custom handler instead", func(t *testing.T) {
-			request := testRequest(tested.URL)
-
-			response := must.Succeed(client.Do(request))
+		t.Run("does not forward a request for a custom path and uses a custom handler instead", func(t *testing.T) {
+			response := must.Succeed(client.Do(request.New(tested.URL, customPath)))
 
 			assert.Equal(t, http.StatusOK, response.StatusCode)
 			body := must.Succeed(io.ReadAll(response.Body))
 			assert.Equal(t, customResponse, string(body))
+		})
+
+		t.Run("forwards a request with headers to the underlying backend server for a different path", func(t *testing.T) {
+			requestPath := "/test"
+			response := must.Succeed(client.Do(request.New(tested.URL, requestPath)))
+
+			assert.Equal(t, http.StatusOK, response.StatusCode)
+			body := must.Succeed(io.ReadAll(response.Body))
+			assert.Equal(t, requestPath, string(body))
 		})
 	})
 }
