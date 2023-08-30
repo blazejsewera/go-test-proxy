@@ -8,16 +8,26 @@ import (
 )
 
 type Builder struct {
-	Router *http.ServeMux
-	port   uint16
+	Router  *http.ServeMux
+	Monitor Monitor
+	port    uint16
 }
 
 func NewBuilder() *Builder {
-	return &Builder{port: 8080, Router: http.NewServeMux()}
+	return &Builder{
+		port:    8080,
+		Monitor: NoopMonitor{},
+		Router:  http.NewServeMux(),
+	}
 }
 
 func (b *Builder) WithPort(port uint16) *Builder {
 	b.port = port
+	return b
+}
+
+func (b *Builder) WithMonitor(monitor Monitor) *Builder {
+	b.Monitor = monitor
 	return b
 }
 

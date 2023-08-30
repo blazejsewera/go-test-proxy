@@ -10,12 +10,15 @@ import (
 )
 
 func TestProxy(t *testing.T) {
+	monitor := MonitorSpy{}
+
 	t.Run("proxy without any custom handler", func(t *testing.T) {
 		backendURL, closeBackend := PathEchoServer()
 		defer closeBackend()
 
 		tested := NewBuilder().
 			WithProxyTarget(backendURL).
+			WithMonitor(monitor).
 			Build()
 		tested.Start()
 		defer tested.Close()
@@ -45,6 +48,7 @@ func TestProxy(t *testing.T) {
 		tested := NewBuilder().
 			WithHandlerFunc(customPath, customHandler).
 			WithProxyTarget(backendURL).
+			WithMonitor(monitor).
 			Build()
 
 		tested.Start()

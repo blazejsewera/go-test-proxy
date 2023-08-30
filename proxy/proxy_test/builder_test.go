@@ -8,6 +8,7 @@ import (
 
 type TestServer struct {
 	*httptest.Server
+	monitor proxy.Monitor
 }
 
 type TestServerBuilder struct {
@@ -28,6 +29,11 @@ func (b *TestServerBuilder) WithHandlerFunc(pattern string, customHandlerFunc fu
 	return b
 }
 
+func (b *TestServerBuilder) WithMonitor(monitor MonitorSpy) *TestServerBuilder {
+	b.builder.WithMonitor(monitor)
+	return b
+}
+
 func (b *TestServerBuilder) Build() *TestServer {
-	return &TestServer{Server: httptest.NewUnstartedServer(b.builder.Router)}
+	return &TestServer{Server: httptest.NewUnstartedServer(b.builder.Router), monitor: b.builder.Monitor}
 }
