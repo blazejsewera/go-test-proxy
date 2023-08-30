@@ -56,7 +56,7 @@ func TestProxy(t *testing.T) {
 
 			_ = must.Succeed(client.Do(request.New(tested.URL, requestPath)))
 
-			assert.JSONEqual(t, expected, monitor.Events)
+			assert.HTTPEventsEqual(t, expected, monitor.Events)
 		})
 	})
 
@@ -118,7 +118,7 @@ func TestProxy(t *testing.T) {
 
 			_ = must.Succeed(client.Do(request.New(tested.URL, customPath)))
 
-			assert.JSONEqual(t, expected, monitor.Events)
+			assert.HTTPEventsEqual(t, expected, monitor.Events)
 		})
 	})
 }
