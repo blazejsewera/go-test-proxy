@@ -11,7 +11,7 @@ import (
 )
 
 func TestProxy(t *testing.T) {
-	monitor := MonitorSpy{}
+	monitor := new(MonitorSpy)
 
 	t.Run("proxy without any custom handler", func(t *testing.T) {
 		backendURL, closeBackend := PathEchoServer()
@@ -39,21 +39,20 @@ func TestProxy(t *testing.T) {
 			monitor.Clear()
 
 			requestPath := "/test"
-			requestEvent := proxy.HttpEvent{
+			requestEvent := proxy.HTTPEvent{
 				EventType: proxy.RequestEventType,
 				Header:    request.ReferenceHeader(),
 				Body:      request.ReferenceBody(),
 				Method:    request.MethodGet(),
 				Path:      requestPath,
 			}
-			responseEvent := proxy.HttpEvent{
-				EventType:         proxy.ResponseEventType,
-				CustomHandlerUsed: false,
-				Header:            request.ReferenceHeader(),
-				Body:              requestPath,
-				Status:            http.StatusOK,
+			responseEvent := proxy.HTTPEvent{
+				EventType: proxy.ResponseEventType,
+				Header:    request.ReferenceHeader(),
+				Body:      requestPath,
+				Status:    http.StatusOK,
 			}
-			expected := []proxy.HttpEvent{requestEvent, responseEvent}
+			expected := []proxy.HTTPEvent{requestEvent, responseEvent}
 
 			_ = must.Succeed(client.Do(request.New(tested.URL, requestPath)))
 
@@ -102,21 +101,20 @@ func TestProxy(t *testing.T) {
 		t.Run("monitors request and response handled by custom handler", func(t *testing.T) {
 			monitor.Clear()
 
-			requestEvent := proxy.HttpEvent{
+			requestEvent := proxy.HTTPEvent{
 				EventType: proxy.RequestEventType,
 				Header:    request.ReferenceHeader(),
 				Body:      request.ReferenceBody(),
 				Method:    request.MethodGet(),
 				Path:      customPath,
 			}
-			responseEvent := proxy.HttpEvent{
-				EventType:         proxy.ResponseEventType,
-				CustomHandlerUsed: true,
-				Header:            http.Header{},
-				Body:              customResponseBody,
-				Status:            http.StatusOK,
+			responseEvent := proxy.HTTPEvent{
+				EventType: proxy.ResponseEventType,
+				Header:    http.Header{},
+				Body:      customResponseBody,
+				Status:    http.StatusOK,
 			}
-			expected := []proxy.HttpEvent{requestEvent, responseEvent}
+			expected := []proxy.HTTPEvent{requestEvent, responseEvent}
 
 			_ = must.Succeed(client.Do(request.New(tested.URL, customPath)))
 

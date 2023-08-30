@@ -7,7 +7,7 @@ const (
 	ResponseEventType EventType = "response"
 )
 
-type HttpEvent struct {
+type HTTPEvent struct {
 	EventType EventType `json:"eventType"`
 
 	// common data
@@ -23,16 +23,15 @@ type HttpEvent struct {
 
 	// response data
 
-	Status            uint `json:"status"`
-	CustomHandlerUsed bool `json:"customHandlerUsed"`
+	Status uint `json:"status"`
 }
 
 type Monitor interface {
-	HttpEvent(e HttpEvent)
+	HTTPEvent(e HTTPEvent)
 }
 
 type NoopMonitor struct{}
 
 var _ Monitor = NoopMonitor{}
 
-func (n NoopMonitor) HttpEvent(HttpEvent) {}
+func (n NoopMonitor) HTTPEvent(HTTPEvent) {}

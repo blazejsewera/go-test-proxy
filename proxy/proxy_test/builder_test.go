@@ -29,7 +29,7 @@ func (b *TestServerBuilder) WithHandlerFunc(pattern string, customHandlerFunc fu
 	return b
 }
 
-func (b *TestServerBuilder) WithMonitor(monitor MonitorSpy) *TestServerBuilder {
+func (b *TestServerBuilder) WithMonitor(monitor *MonitorSpy) *TestServerBuilder {
 	b.builder.WithMonitor(monitor)
 	return b
 }
