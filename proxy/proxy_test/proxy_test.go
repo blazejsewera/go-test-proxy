@@ -78,7 +78,6 @@ func TestProxy(t *testing.T) {
 			WithHandlerFunc(customPath, customHandler).
 			WithProxyTarget(backendURL).
 			WithMonitor(monitor))
-
 		tested.Start()
 		defer tested.Close()
 
