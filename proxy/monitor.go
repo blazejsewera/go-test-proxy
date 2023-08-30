@@ -8,17 +8,23 @@ const (
 )
 
 type HttpEvent struct {
-	EventType         EventType `json:"eventType"`
-	CustomHandlerUsed bool      `json:"customHandlerUsed"`
+	EventType EventType `json:"eventType"`
+
+	// common data
 
 	Header map[string][]string `json:"header"`
 	Body   string              `json:"body"`
+
+	// request data
 
 	Method string `json:"method"`
 	Path   string `json:"path"`
 	Query  string `json:"query"`
 
-	Status uint `json:"status"`
+	// response data
+
+	Status            uint `json:"status"`
+	CustomHandlerUsed bool `json:"customHandlerUsed"`
 }
 
 type Monitor interface {

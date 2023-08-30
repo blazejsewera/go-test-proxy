@@ -40,12 +40,11 @@ func TestProxy(t *testing.T) {
 
 			requestPath := "/test"
 			requestEvent := proxy.HttpEvent{
-				EventType:         proxy.RequestEventType,
-				CustomHandlerUsed: false,
-				Header:            request.ReferenceHeader(),
-				Body:              request.ReferenceBody(),
-				Method:            request.MethodGet(),
-				Path:              requestPath,
+				EventType: proxy.RequestEventType,
+				Header:    request.ReferenceHeader(),
+				Body:      request.ReferenceBody(),
+				Method:    request.MethodGet(),
+				Path:      requestPath,
 			}
 			responseEvent := proxy.HttpEvent{
 				EventType:         proxy.ResponseEventType,
@@ -67,9 +66,9 @@ func TestProxy(t *testing.T) {
 		defer closeBackend()
 
 		customPath := "/customPath"
-		customResponse := "customResponse"
+		customResponseBody := "customResponseBody"
 		customHandler := func(w http.ResponseWriter, r *http.Request) {
-			must.Succeed(w.Write([]byte(customResponse)))
+			must.Succeed(w.Write([]byte(customResponseBody)))
 		}
 
 		tested := NewBuilder().
@@ -88,7 +87,7 @@ func TestProxy(t *testing.T) {
 
 			assert.Equal(t, http.StatusOK, response.StatusCode)
 			body := must.Succeed(io.ReadAll(response.Body))
-			assert.Equal(t, customResponse, string(body))
+			assert.Equal(t, customResponseBody, string(body))
 		})
 
 		t.Run("forwards a request with headers to the underlying backend server for a different path", func(t *testing.T) {
@@ -98,6 +97,30 @@ func TestProxy(t *testing.T) {
 			assert.Equal(t, http.StatusOK, response.StatusCode)
 			body := must.Succeed(io.ReadAll(response.Body))
 			assert.Equal(t, requestPath, string(body))
+		})
+
+		t.Run("monitors request and response handled by custom handler", func(t *testing.T) {
+			monitor.Clear()
+
+			requestEvent := proxy.HttpEvent{
+				EventType: proxy.RequestEventType,
+				Header:    request.ReferenceHeader(),
+				Body:      request.ReferenceBody(),
+				Method:    request.MethodGet(),
+				Path:      customPath,
+			}
+			responseEvent := proxy.HttpEvent{
+				EventType:         proxy.ResponseEventType,
+				CustomHandlerUsed: true,
+				Header:            http.Header{},
+				Body:              customResponseBody,
+				Status:            http.StatusOK,
+			}
+			expected := []proxy.HttpEvent{requestEvent, responseEvent}
+
+			_ = must.Succeed(client.Do(request.New(tested.URL, customPath)))
+
+			assert.JSONEqual(t, expected, monitor.Events)
 		})
 	})
 }
