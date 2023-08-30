@@ -50,7 +50,7 @@ func assertString(name, expected, actual string) error {
 
 func assertInt(name string, expected, actual int) error {
 	if expected != actual {
-		return fmt.Errorf("%s,%d not equal to %d", name, expected, actual)
+		return fmt.Errorf("%s: %d not equal to %d", name, expected, actual)
 	}
 	return nil
 }

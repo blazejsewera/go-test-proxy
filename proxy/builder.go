@@ -43,14 +43,17 @@ func (b *Builder) WithProxyTarget(url string) *Builder {
 
 		response, err := http.DefaultClient.Do(r)
 		if err != nil {
+			b.Monitor.Err(err)
 			return
 		}
 		bodyBytes, err := io.ReadAll(response.Body)
 		if err != nil {
+			b.Monitor.Err(err)
 			return
 		}
 		_, err = w.Write(bodyBytes)
 		if err != nil {
+			b.Monitor.Err(err)
 			return
 		}
 		header.CloneToResponseWriter(response.Header, w)
@@ -90,13 +93,14 @@ func (i *ResponseWriterInterceptor) WriteHeader(statusCode int) {
 
 func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.ResponseWriter, r *http.Request)) *Builder {
 	wrapperFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		b.Monitor.HTTPEvent(requestHTTPEvent(r))
+		b.Monitor.HTTPEvent(b.requestHTTPEvent(r))
 		interceptor := NewResponseWriterInterceptor(w)
 		handlerFunc(interceptor, r)
 		b.Monitor.HTTPEvent(responseHTTPEvent(interceptor))
 
 		_, err := io.Copy(w, interceptor.bodyBuffer)
 		if err != nil {
+			b.Monitor.Err(err)
 			return
 		}
 	})
@@ -114,8 +118,8 @@ func responseHTTPEvent(interceptor *ResponseWriterInterceptor) HTTPEvent {
 	}
 }
 
-func requestHTTPEvent(r *http.Request) HTTPEvent {
-	body, bodyReader := bodyToStringAndReader(r.Body)
+func (b *Builder) requestHTTPEvent(r *http.Request) HTTPEvent {
+	body, bodyReader := b.bodyToStringAndReader(r.Body)
 	r.Body = bodyReader
 	return HTTPEvent{
 		EventType: RequestEventType,
@@ -127,16 +131,18 @@ func requestHTTPEvent(r *http.Request) HTTPEvent {
 	}
 }
 
-func bodyToStringAndReader(body io.ReadCloser) (string, io.ReadCloser) {
-	b, err := io.ReadAll(body)
+func (b *Builder) bodyToStringAndReader(body io.ReadCloser) (string, io.ReadCloser) {
+	bodyBytes, err := io.ReadAll(body)
 	if err != nil {
+		b.Monitor.Err(fmt.Errorf("reading body from request: %s", err))
 		return "ERROR WHEN READING BODY", nil
 	}
 	err = body.Close()
 	if err != nil {
+		b.Monitor.Err(fmt.Errorf("closing body in request: %s", err))
 		return "ERROR WHEN CLOSING BODY READER", nil
 	}
-	return string(b), io.NopCloser(bytes.NewReader(b))
+	return string(bodyBytes), io.NopCloser(bytes.NewReader(bodyBytes))
 }
 
 func (b *Builder) Build() *Server {
