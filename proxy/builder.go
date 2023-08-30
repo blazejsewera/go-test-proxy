@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"fmt"
 	"github.com/blazejsewera/go-test-proxy/urls"
 	"io"
 	"net/http"
@@ -8,17 +9,19 @@ import (
 
 type Builder struct {
 	Router *http.ServeMux
+	port   uint16
 }
 
 func NewBuilder() *Builder {
-	return &Builder{}
+	return &Builder{port: 8080, Router: http.NewServeMux()}
+}
+
+func (b *Builder) WithPort(port uint16) *Builder {
+	b.port = port
+	return b
 }
 
 func (b *Builder) WithProxyTarget(url string) *Builder {
-	if b.Router == nil {
-		b.Router = http.NewServeMux()
-	}
-
 	proxyHandler := func(w http.ResponseWriter, r *http.Request) {
 		targetURL := urls.ForwardedURL(url, r.URL)
 
@@ -50,18 +53,14 @@ func (b *Builder) WithHandlerFunc(pattern string, customHandlerFunc func(w http.
 }
 
 func (b *Builder) WithHandler(pattern string, customHandler http.Handler) *Builder {
-	if b.Router == nil {
-		b.Router = http.NewServeMux()
-	}
-
 	b.Router.Handle(pattern, customHandler)
-
 	return b
 }
 
 func (b *Builder) Build() *Server {
-	return &Server{
-		server: &http.Server{Addr: "", Handler: b.Router},
-		router: b.Router,
-	}
+	return &Server{server: &http.Server{Addr: b.serverAddr(), Handler: b.Router}}
+}
+
+func (b *Builder) serverAddr() string {
+	return fmt.Sprintf("0.0.0.0:%d", b.port)
 }

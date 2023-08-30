@@ -1,10 +1,14 @@
-package proxytest
+package proxy_test
 
 import (
 	"github.com/blazejsewera/go-test-proxy/proxy"
 	"net/http"
 	"net/http/httptest"
 )
+
+type TestServer struct {
+	*httptest.Server
+}
 
 type TestServerBuilder struct {
 	builder *proxy.Builder

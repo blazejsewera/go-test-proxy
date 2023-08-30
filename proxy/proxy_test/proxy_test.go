@@ -1,7 +1,6 @@
 package proxy_test
 
 import (
-	"github.com/blazejsewera/go-test-proxy/proxy/proxytest"
 	"github.com/blazejsewera/go-test-proxy/requests"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
 	"github.com/blazejsewera/go-test-proxy/test/must"
@@ -44,7 +43,7 @@ func TestProxy(t *testing.T) {
 		backendURL, closeBackend := underlyingBackendServer(backendResponse)
 		defer closeBackend()
 
-		tested := proxytest.NewBuilder().
+		tested := NewBuilder().
 			WithProxyTarget(backendURL).
 			Build()
 		tested.Start()
@@ -73,7 +72,7 @@ func TestProxy(t *testing.T) {
 			must.Succeed(w.Write([]byte(customResponse)))
 		}
 
-		tested := proxytest.NewBuilder().
+		tested := NewBuilder().
 			WithProxyTarget(backendURL).
 			WithHandlerFunc("/test", customHandler).
 			Build()
