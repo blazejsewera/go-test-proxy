@@ -1,68 +1,29 @@
 package proxytest
 
 import (
-	"github.com/blazejsewera/go-test-proxy/urls"
-	"io"
+	"github.com/blazejsewera/go-test-proxy/proxy"
 	"net/http"
 	"net/http/httptest"
 )
 
 type TestServerBuilder struct {
-	target string
-	router *http.ServeMux
+	builder *proxy.Builder
 }
 
-func Builder() *TestServerBuilder {
-	return &TestServerBuilder{}
+func NewBuilder() *TestServerBuilder {
+	return &TestServerBuilder{builder: proxy.NewBuilder()}
 }
 
-func (b *TestServerBuilder) WithTarget(url string) *TestServerBuilder {
-	b.target = url
+func (b *TestServerBuilder) WithProxyTarget(url string) *TestServerBuilder {
+	b.builder.WithProxyTarget(url)
 	return b
 }
 
 func (b *TestServerBuilder) WithHandlerFunc(pattern string, customHandlerFunc func(w http.ResponseWriter, r *http.Request)) *TestServerBuilder {
-	return b.WithHandler(pattern, http.HandlerFunc(customHandlerFunc))
-}
-
-func (b *TestServerBuilder) WithHandler(pattern string, customHandler http.Handler) *TestServerBuilder {
-	if b.router == nil {
-		b.router = http.NewServeMux()
-	}
-
-	b.router.Handle(pattern, customHandler)
-
+	b.builder.WithHandlerFunc(pattern, customHandlerFunc)
 	return b
 }
 
-func (b *TestServerBuilder) Build() *httptest.Server {
-	if b.router == nil {
-		b.router = http.NewServeMux()
-	}
-
-	proxyHandler := func(w http.ResponseWriter, r *http.Request) {
-		targetURL := urls.ForwardedURL(b.target, r.URL)
-
-		r.Host = targetURL.Host
-		r.RequestURI = ""
-		r.URL = targetURL
-		r.Header.Clone()
-
-		response, err := http.DefaultClient.Do(r)
-		if err != nil {
-			return
-		}
-		bytes, err := io.ReadAll(response.Body)
-		if err != nil {
-			return
-		}
-		_, err = w.Write(bytes)
-		if err != nil {
-			return
-		}
-	}
-
-	b.router.HandleFunc("/", proxyHandler)
-
-	return httptest.NewUnstartedServer(b.router)
+func (b *TestServerBuilder) Build() *TestServer {
+	return &TestServer{Server: httptest.NewUnstartedServer(b.builder.Router)}
 }

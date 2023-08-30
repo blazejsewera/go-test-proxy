@@ -44,8 +44,8 @@ func TestProxy(t *testing.T) {
 		backendURL, closeBackend := underlyingBackendServer(backendResponse)
 		defer closeBackend()
 
-		tested := proxytest.Builder().
-			WithTarget(backendURL).
+		tested := proxytest.NewBuilder().
+			WithProxyTarget(backendURL).
 			Build()
 		tested.Start()
 		defer tested.Close()
@@ -69,13 +69,13 @@ func TestProxy(t *testing.T) {
 		defer closeBackend()
 
 		customResponse := "customResponse"
-		customHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		customHandler := func(w http.ResponseWriter, r *http.Request) {
 			must.Succeed(w.Write([]byte(customResponse)))
-		})
+		}
 
-		tested := proxytest.Builder().
-			WithTarget(backendURL).
-			WithHandler("/test", customHandler).
+		tested := proxytest.NewBuilder().
+			WithProxyTarget(backendURL).
+			WithHandlerFunc("/test", customHandler).
 			Build()
 
 		tested.Start()
