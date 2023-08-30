@@ -3,16 +3,16 @@ package proxy
 type EventType string
 
 const (
-	Request  EventType = "request"
-	Response EventType = "response"
+	RequestEventType  EventType = "request"
+	ResponseEventType EventType = "response"
 )
 
 type HttpEvent struct {
 	EventType         EventType `json:"eventType"`
 	CustomHandlerUsed bool      `json:"customHandlerUsed"`
 
-	Headers map[string][]string `json:"headers"`
-	Body    string              `json:"body"`
+	Header map[string][]string `json:"header"`
+	Body   string              `json:"body"`
 
 	Method string `json:"method"`
 	Path   string `json:"path"`

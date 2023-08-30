@@ -1,6 +1,7 @@
 package proxy_test
 
 import (
+	"github.com/blazejsewera/go-test-proxy/proxy"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
 	"github.com/blazejsewera/go-test-proxy/test/must"
 	"github.com/blazejsewera/go-test-proxy/test/request"
@@ -32,6 +33,32 @@ func TestProxy(t *testing.T) {
 			assert.Equal(t, http.StatusOK, response.StatusCode)
 			body := must.Succeed(io.ReadAll(response.Body))
 			assert.Equal(t, requestPath, string(body))
+		})
+
+		t.Run("monitors forwarded request and response", func(t *testing.T) {
+			monitor.Clear()
+
+			requestPath := "/test"
+			requestEvent := proxy.HttpEvent{
+				EventType:         proxy.RequestEventType,
+				CustomHandlerUsed: false,
+				Header:            request.ReferenceHeader(),
+				Body:              request.ReferenceBody(),
+				Method:            request.MethodGet(),
+				Path:              requestPath,
+			}
+			responseEvent := proxy.HttpEvent{
+				EventType:         proxy.ResponseEventType,
+				CustomHandlerUsed: false,
+				Header:            request.ReferenceHeader(),
+				Body:              requestPath,
+				Status:            http.StatusOK,
+			}
+			expected := []proxy.HttpEvent{requestEvent, responseEvent}
+
+			_ = must.Succeed(client.Do(request.New(tested.URL, requestPath)))
+
+			assert.JSONEqual(t, expected, monitor.Events)
 		})
 	})
 

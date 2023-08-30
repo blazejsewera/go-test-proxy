@@ -19,7 +19,7 @@ func PathEchoServer() (url string, closeServer func()) {
 	}
 
 	backendEndpoint := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		expected := request.Reference()
+		expected := request.ReferenceRequest()
 		actual := r
 		err := assert.RequestsEqualExcludingPathAndHost(expected, actual)
 		if err != nil {
