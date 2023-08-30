@@ -18,10 +18,9 @@ func TestProxy(t *testing.T) {
 		backendURL, closeBackend := PathEchoServer()
 		defer closeBackend()
 
-		tested := NewBuilder().
+		tested := BuildTestServer(proxy.NewBuilder().
 			WithProxyTarget(backendURL).
-			WithMonitor(monitor).
-			Build()
+			WithMonitor(monitor))
 		tested.Start()
 		defer tested.Close()
 
@@ -75,11 +74,10 @@ func TestProxy(t *testing.T) {
 			must.Succeed(w.Write([]byte(customResponseBody)))
 		}
 
-		tested := NewBuilder().
+		tested := BuildTestServer(proxy.NewBuilder().
 			WithHandlerFunc(customPath, customHandler).
 			WithProxyTarget(backendURL).
-			WithMonitor(monitor).
-			Build()
+			WithMonitor(monitor))
 
 		tested.Start()
 		defer tested.Close()
