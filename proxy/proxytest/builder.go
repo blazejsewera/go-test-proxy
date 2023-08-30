@@ -9,7 +9,11 @@ import (
 
 type TestServerBuilder struct {
 	target string
-	router http.ServeMux
+	router *http.ServeMux
+}
+
+func Builder() *TestServerBuilder {
+	return &TestServerBuilder{}
 }
 
 func (b *TestServerBuilder) WithTarget(url string) *TestServerBuilder {
@@ -17,8 +21,26 @@ func (b *TestServerBuilder) WithTarget(url string) *TestServerBuilder {
 	return b
 }
 
+func (b *TestServerBuilder) WithHandlerFunc(pattern string, customHandlerFunc func(w http.ResponseWriter, r *http.Request)) *TestServerBuilder {
+	return b.WithHandler(pattern, http.HandlerFunc(customHandlerFunc))
+}
+
+func (b *TestServerBuilder) WithHandler(pattern string, customHandler http.Handler) *TestServerBuilder {
+	if b.router == nil {
+		b.router = http.NewServeMux()
+	}
+
+	b.router.Handle(pattern, customHandler)
+
+	return b
+}
+
 func (b *TestServerBuilder) Build() *httptest.Server {
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if b.router == nil {
+		b.router = http.NewServeMux()
+	}
+
+	proxyHandler := func(w http.ResponseWriter, r *http.Request) {
 		targetURL := urls.ForwardedURL(b.target, r.URL)
 
 		r.Host = targetURL.Host
@@ -38,15 +60,9 @@ func (b *TestServerBuilder) Build() *httptest.Server {
 		if err != nil {
 			return
 		}
-	})
+	}
 
-	return httptest.NewUnstartedServer(handler)
-}
+	b.router.HandleFunc("/", proxyHandler)
 
-func (b *TestServerBuilder) WithHandler(path string, customHandler http.HandlerFunc) *TestServerBuilder {
-	panic("not yet implemented")
-}
-
-func Builder() *TestServerBuilder {
-	return &TestServerBuilder{}
+	return httptest.NewUnstartedServer(b.router)
 }
