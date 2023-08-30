@@ -27,7 +27,7 @@ func HTTPEventsEqual(t testing.TB, expected, actual []proxy.HTTPEvent) {
 		errs = append(errs, assertString("method", expectedEvent.Method, actualEvent.Method))
 		errs = append(errs, assertString("path", expectedEvent.Path, actualEvent.Path))
 		errs = append(errs, assertString("query", expectedEvent.Query, actualEvent.Query))
-		errs = append(errs, assertUint("status", expectedEvent.Status, actualEvent.Status))
+		errs = append(errs, assertInt("status", expectedEvent.Status, actualEvent.Status))
 		errs = append(errs, assertHeaderContainsExpected("header", expectedEvent.Header, actualEvent.Header))
 	}
 
@@ -60,7 +60,7 @@ func assertString(name, expected, actual string) error {
 	return nil
 }
 
-func assertUint(name string, expected, actual uint) error {
+func assertInt(name string, expected, actual int) error {
 	if expected != actual {
 		return fmt.Errorf("%s,%d not equal to %d", name, expected, actual)
 	}

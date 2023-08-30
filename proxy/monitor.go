@@ -23,7 +23,7 @@ type HTTPEvent struct {
 
 	// response data
 
-	Status uint `json:"status"`
+	Status int `json:"status"`
 }
 
 type Monitor interface {

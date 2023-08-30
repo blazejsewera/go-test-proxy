@@ -45,11 +45,11 @@ func (b *Builder) WithProxyTarget(url string) *Builder {
 		if err != nil {
 			return
 		}
-		bytes, err := io.ReadAll(response.Body)
+		bodyBytes, err := io.ReadAll(response.Body)
 		if err != nil {
 			return
 		}
-		_, err = w.Write(bytes)
+		_, err = w.Write(bodyBytes)
 		if err != nil {
 			return
 		}
@@ -58,13 +58,60 @@ func (b *Builder) WithProxyTarget(url string) *Builder {
 	return b.WithHandlerFunc("/", proxyHandler)
 }
 
+type ResponseWriterInterceptor struct {
+	w          http.ResponseWriter
+	header     http.Header
+	bodyBuffer *bytes.Buffer
+	statusCode int
+}
+
+var _ http.ResponseWriter = (*ResponseWriterInterceptor)(nil)
+
+func NewResponseWriterInterceptor(w http.ResponseWriter) *ResponseWriterInterceptor {
+	return &ResponseWriterInterceptor{
+		w:          w,
+		bodyBuffer: bytes.NewBuffer([]byte{}),
+		statusCode: http.StatusOK,
+	}
+}
+
+func (i *ResponseWriterInterceptor) Header() http.Header {
+	return i.w.Header()
+}
+
+func (i *ResponseWriterInterceptor) Write(body []byte) (int, error) {
+	return i.bodyBuffer.Write(body)
+}
+
+func (i *ResponseWriterInterceptor) WriteHeader(statusCode int) {
+	i.statusCode = statusCode
+}
+
 func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.ResponseWriter, r *http.Request)) *Builder {
 	wrapperFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b.Monitor.HTTPEvent(requestHTTPEvent(r))
-		handlerFunc(w, r)
+		interceptor := NewResponseWriterInterceptor(w)
+		handlerFunc(interceptor, r)
+		b.Monitor.HTTPEvent(responseHTTPEvent(interceptor))
+
+		_, err := io.Copy(w, interceptor.bodyBuffer)
+		if err != nil {
+			return
+		}
+		w.WriteHeader(interceptor.statusCode)
 	})
 	b.Router.Handle(pattern, wrapperFunc)
 	return b
+}
+
+func responseHTTPEvent(interceptor *ResponseWriterInterceptor) HTTPEvent {
+	body := interceptor.bodyBuffer.String()
+	return HTTPEvent{
+		EventType: ResponseEventType,
+		Header:    copyHeader(interceptor.header),
+		Body:      body,
+		Status:    interceptor.statusCode,
+	}
 }
 
 func requestHTTPEvent(r *http.Request) HTTPEvent {
