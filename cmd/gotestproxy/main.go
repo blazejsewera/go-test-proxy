@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"github.com/blazejsewera/go-test-proxy/monitor"
 	"github.com/blazejsewera/go-test-proxy/proxy"
 	"log"
 	"net/http"
@@ -29,6 +30,9 @@ func main() {
 	}
 
 	builder.WithHandlerFunc("/_info", configInfoHandler(info))
+
+	consoleMonitor := monitor.NewConsoleMonitor(info.Target)
+	builder.WithMonitor(consoleMonitor)
 
 	server := builder.Build()
 	log.Printf("starting proxy server for target: '%s', go to 'http://localhost:%d/_info' to get config", info.Target, info.Port)

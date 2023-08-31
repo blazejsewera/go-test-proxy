@@ -9,7 +9,7 @@
 *.dylib
 
 # Main binary
-gtp
+gotestproxy
 
 # Test binary, built with `go test -c`
 *.test
