@@ -16,16 +16,18 @@ func TestCurlRequestMonitor(t *testing.T) {
 		httpEvent := proxy.HTTPEvent{
 			EventType: proxy.RequestEventType,
 			Header: map[string][]string{
+				"Accept":       {"application/json"},
 				"Content-Type": {"application/json"},
 			},
 			Body:   `{"bodyKey":"bodyValue"}`,
 			Method: http.MethodPost,
 			Path:   "/path",
-			Query:  "?queryKey=queryValue",
+			Query:  "queryKey=queryValue",
 		}
 
 		expected := normalizedLine(
 			`curl -X POST
+			      -H "Accept: application/json"
 			      -H "Content-Type: application/json"
 			      -d "{\"bodyKey\":\"bodyValue\"}"
     		      http://example.com/path?queryKey=queryValue`)

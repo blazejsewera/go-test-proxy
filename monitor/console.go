@@ -7,13 +7,17 @@ import (
 )
 
 type Console struct {
-	target string
+	target             string
+	curlRequestMonitor *CurlRequestVoidResponse
 }
 
 var _ proxy.Monitor = (*Console)(nil)
 
 func NewConsoleMonitor(target string) *Console {
-	return &Console{target: target}
+	return &Console{
+		target:             target,
+		curlRequestMonitor: NewCurlRequestVoidResponseMonitorToStdOut(target),
+	}
 }
 
 func (c *Console) HTTPEvent(event proxy.HTTPEvent) {
@@ -25,7 +29,7 @@ func (c *Console) HTTPEvent(event proxy.HTTPEvent) {
 }
 
 func (c *Console) printRequest(event proxy.HTTPEvent) {
-	fmt.Print("\n\n==REQUEST==\n")
+	fmt.Print("\n===== REQUEST =====\n")
 	query := ""
 	if event.Query != "" {
 		query = fmt.Sprintf("?%s", event.Query)
@@ -36,17 +40,20 @@ func (c *Console) printRequest(event proxy.HTTPEvent) {
 	printHeader(event.Header)
 	fmt.Print("--BODY--\n")
 	fmt.Println(event.Body)
-	fmt.Print("===========\n")
+	fmt.Print("------- CURL ------\n")
+	c.curlRequestMonitor.HTTPEvent(event)
+	fmt.Print("-------------------\n")
+	fmt.Print("===================\n")
 }
 
 func (c *Console) printResponse(event proxy.HTTPEvent) {
-	fmt.Print("\n\n==RESPONSE==\n")
+	fmt.Print("\n===== RESPONSE =====\n")
 	fmt.Printf("STATUS: %d\n", event.Status)
 	fmt.Print("--HEADER--\n")
 	printHeader(event.Header)
 	fmt.Print("--BODY--\n")
 	fmt.Println(event.Body)
-	fmt.Print("===========\n")
+	fmt.Print("====================\n")
 }
 
 func printHeader(h map[string][]string) {
