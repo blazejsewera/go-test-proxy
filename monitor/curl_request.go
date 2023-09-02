@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/blazejsewera/go-test-proxy/proxy"
 	"io"
-	"log"
 	"os"
 	"strconv"
 )
@@ -36,7 +35,10 @@ func (c *CurlRequestVoidResponse) HTTPEvent(event proxy.HTTPEvent) {
 }
 
 func (c *CurlRequestVoidResponse) Err(err error) {
-	log.Println(err)
+	_, errW := fmt.Fprintf(os.Stderr, "[PROXY ERROR]: %s\n", err)
+	if errW != nil {
+		panic("cannot write to stderr")
+	}
 }
 
 func (c *CurlRequestVoidResponse) writeCurlRequest(event proxy.HTTPEvent) {
