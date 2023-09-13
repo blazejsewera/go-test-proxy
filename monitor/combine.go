@@ -6,7 +6,6 @@ type CombinedMonitor struct {
 	monitors []proxy.Monitor
 }
 
-// @impl
 var _ proxy.Monitor = (*CombinedMonitor)(nil)
 
 func (c *CombinedMonitor) HTTPEvent(event proxy.HTTPEvent) {

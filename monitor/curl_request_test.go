@@ -33,7 +33,7 @@ func TestCurlRequestMonitor(t *testing.T) {
     		      http://example.com/path?queryKey=queryValue`)
 
 		buffer := &strings.Builder{}
-		tested := monitor.NewCurlRequestVoidResponseMonitor(target, buffer)
+		tested := monitor.NewCurlRequestMonitorW(target, buffer)
 
 		tested.HTTPEvent(httpEvent)
 
@@ -45,7 +45,7 @@ func TestCurlRequestMonitor(t *testing.T) {
 		httpEvent := proxy.HTTPEvent{EventType: proxy.ResponseEventType}
 
 		buffer := &strings.Builder{}
-		tested := monitor.NewCurlRequestVoidResponseMonitor(target, buffer)
+		tested := monitor.NewCurlRequestMonitorW(target, buffer)
 
 		tested.HTTPEvent(httpEvent)
 

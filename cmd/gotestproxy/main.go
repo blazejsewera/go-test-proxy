@@ -32,7 +32,9 @@ func main() {
 	builder.WithHandlerFunc("/_info", configInfoHandler(info))
 
 	consoleMonitor := monitor.NewConsoleMonitor(info.Target)
-	builder.WithMonitor(consoleMonitor)
+	curlRequestMonitor := monitor.NewCurlRequestMonitor(info.Target)
+	stderrMonitor := monitor.NewStdErrMonitor()
+	builder.WithMonitor(monitor.Combine(consoleMonitor, curlRequestMonitor, stderrMonitor))
 
 	server := builder.Build()
 	log.Printf("starting proxy server for target: '%s', go to 'http://localhost:%d/_info' to get config", info.Target, info.Port)

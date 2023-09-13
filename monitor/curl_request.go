@@ -8,22 +8,20 @@ import (
 	"strconv"
 )
 
-type CurlRequestVoidResponse struct {
+type curlRequest struct {
 	target string
 	output io.Writer
 }
 
-func NewCurlRequestVoidResponseMonitor(target string, output io.Writer) *CurlRequestVoidResponse {
-	return &CurlRequestVoidResponse{target: target, output: output}
+func NewCurlRequestMonitor(target string) proxy.Monitor {
+	return NewCurlRequestMonitorW(target, os.Stdout)
 }
 
-func NewCurlRequestVoidResponseMonitorToStdOut(target string) *CurlRequestVoidResponse {
-	return NewCurlRequestVoidResponseMonitor(target, os.Stdout)
+func NewCurlRequestMonitorW(target string, output io.Writer) proxy.Monitor {
+	return &curlRequest{target: target, output: output}
 }
 
-var _ proxy.Monitor = (*CurlRequestVoidResponse)(nil)
-
-func (c *CurlRequestVoidResponse) HTTPEvent(event proxy.HTTPEvent) {
+func (c *curlRequest) HTTPEvent(event proxy.HTTPEvent) {
 	switch event.EventType {
 	case proxy.RequestEventType:
 		c.writeCurlRequest(event)
@@ -34,14 +32,7 @@ func (c *CurlRequestVoidResponse) HTTPEvent(event proxy.HTTPEvent) {
 	}
 }
 
-func (c *CurlRequestVoidResponse) Err(err error) {
-	_, errW := fmt.Fprintf(os.Stderr, "[PROXY ERROR]: %s\n", err)
-	if errW != nil {
-		panic("cannot write to stderr")
-	}
-}
-
-func (c *CurlRequestVoidResponse) writeCurlRequest(event proxy.HTTPEvent) {
+func (c *curlRequest) writeCurlRequest(event proxy.HTTPEvent) {
 	result := fmt.Sprintf("curl -X %s%s%s %s\n",
 		event.Method,
 		headerToCurl(event.Header),
@@ -77,3 +68,5 @@ func urlPartsToCurl(host string, path string, query string) string {
 	}
 	return fmt.Sprintf("%s%s?%s", host, path, query)
 }
+
+func (c *curlRequest) Err(error) {}

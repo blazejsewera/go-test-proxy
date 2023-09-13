@@ -3,24 +3,21 @@ package monitor
 import (
 	"fmt"
 	"github.com/blazejsewera/go-test-proxy/proxy"
-	"os"
 )
 
-type Console struct {
-	target             string
-	curlRequestMonitor *CurlRequestVoidResponse
+type console struct {
+	target string
 }
 
-var _ proxy.Monitor = (*Console)(nil)
+var _ proxy.Monitor = (*console)(nil)
 
-func NewConsoleMonitor(target string) *Console {
-	return &Console{
-		target:             target,
-		curlRequestMonitor: NewCurlRequestVoidResponseMonitorToStdOut(target),
+func NewConsoleMonitor(target string) proxy.Monitor {
+	return &console{
+		target: target,
 	}
 }
 
-func (c *Console) HTTPEvent(event proxy.HTTPEvent) {
+func (c *console) HTTPEvent(event proxy.HTTPEvent) {
 	if event.EventType == proxy.RequestEventType {
 		c.printRequest(event)
 	} else if event.EventType == proxy.ResponseEventType {
@@ -28,7 +25,7 @@ func (c *Console) HTTPEvent(event proxy.HTTPEvent) {
 	}
 }
 
-func (c *Console) printRequest(event proxy.HTTPEvent) {
+func (c *console) printRequest(event proxy.HTTPEvent) {
 	fmt.Print("\n===== REQUEST =====\n")
 	query := ""
 	if event.Query != "" {
@@ -39,21 +36,26 @@ func (c *Console) printRequest(event proxy.HTTPEvent) {
 	fmt.Print("--HEADER--\n")
 	printHeader(event.Header)
 	fmt.Print("--BODY--\n")
-	fmt.Println(event.Body)
-	fmt.Print("------- CURL ------\n")
-	c.curlRequestMonitor.HTTPEvent(event)
-	fmt.Print("-------------------\n")
+	printBody(event.Body)
 	fmt.Print("===================\n")
 }
 
-func (c *Console) printResponse(event proxy.HTTPEvent) {
+func (c *console) printResponse(event proxy.HTTPEvent) {
 	fmt.Print("\n===== RESPONSE =====\n")
 	fmt.Printf("STATUS: %d\n", event.Status)
 	fmt.Print("--HEADER--\n")
 	printHeader(event.Header)
 	fmt.Print("--BODY--\n")
-	fmt.Println(event.Body)
+	printBody(event.Body)
 	fmt.Print("====================\n")
+}
+
+func printBody(body string) {
+	if body == "" {
+		fmt.Println("<empty>")
+	} else {
+		fmt.Println(body)
+	}
 }
 
 func printHeader(h map[string][]string) {
@@ -64,9 +66,4 @@ func printHeader(h map[string][]string) {
 	}
 }
 
-func (c *Console) Err(err error) {
-	_, errW := fmt.Fprintf(os.Stderr, "[PROXY ERROR]: %s\n", err)
-	if errW != nil {
-		panic("cannot write to stderr")
-	}
-}
+func (c *console) Err(error) {}
