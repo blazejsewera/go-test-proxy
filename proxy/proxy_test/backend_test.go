@@ -60,7 +60,6 @@ func GzipServer() (url string, closeServer func()) {
 		gzipped := gzip.NewWriter(w)
 		must.Succeed(gzipped.Write([]byte(res.ReferenceBody())))
 		_ = gzipped.Close()
-		must.Succeed(w.Write([]byte(res.ReferenceBody())))
 	})
 
 	backend := httptest.NewServer(backendEndpoint)

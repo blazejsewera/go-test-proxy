@@ -1,7 +1,6 @@
 package proxy_test
 
 import (
-	"compress/gzip"
 	"github.com/blazejsewera/go-test-proxy/header"
 	"github.com/blazejsewera/go-test-proxy/proxy"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
@@ -33,7 +32,7 @@ func TestProxy(t *testing.T) {
 			response := must.Succeed(client.Do(req.New(tested.URL, requestPath)))
 
 			assert.Equal(t, http.StatusOK, response.StatusCode)
-			body := must.Succeed(io.ReadAll(response.Body))
+			body := readBody(response.Body)
 			assert.Equal(t, requestPath, string(body))
 			assert.HeaderContainsExpected(t, req.ReferenceResponseHeader(), response.Header)
 		})
@@ -89,7 +88,7 @@ func TestProxy(t *testing.T) {
 			response := must.Succeed(client.Do(req.New(tested.URL, customPath)))
 
 			assert.Equal(t, http.StatusOK, response.StatusCode)
-			body := must.Succeed(io.ReadAll(response.Body))
+			body := readBody(response.Body)
 			assert.Equal(t, customResponseBody, string(body))
 			assert.HeaderContainsExpected(t, customResponseHeader, response.Header)
 		})
@@ -99,7 +98,7 @@ func TestProxy(t *testing.T) {
 			response := must.Succeed(client.Do(req.New(tested.URL, requestPath)))
 
 			assert.Equal(t, http.StatusOK, response.StatusCode)
-			body := must.Succeed(io.ReadAll(response.Body))
+			body := readBody(response.Body)
 			assert.Equal(t, requestPath, string(body))
 			assert.HeaderContainsExpected(t, req.ReferenceResponseHeader(), response.Header)
 		})
@@ -146,7 +145,9 @@ func TestProxy(t *testing.T) {
 		t.Run("forwards it unchanged but monitors it in plain text", func(t *testing.T) {
 			response := must.Succeed(client.Do(req.New(tested.URL, "/")))
 
-			actual := decompress(response.Body)
+			// body gets automatically unzipped by http.Client
+			// based on 'Content-Encoding: gzip' header value
+			actual := readBody(response.Body)
 			assert.Equal(t, res.ReferenceBody(), actual)
 
 			responseEventBody := monitor.Events[1].Body
@@ -156,9 +157,7 @@ func TestProxy(t *testing.T) {
 	})
 }
 
-func decompress(compressed io.Reader) string {
-	r := must.Succeed(gzip.NewReader(compressed))
+func readBody(r io.Reader) string {
 	b := must.Succeed(io.ReadAll(r))
-	_ = r.Close()
 	return string(b)
 }
