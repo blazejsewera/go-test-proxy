@@ -2,11 +2,13 @@ package proxy
 
 import (
 	"bytes"
+	"compress/gzip"
 	"fmt"
 	"github.com/blazejsewera/go-test-proxy/header"
 	"github.com/blazejsewera/go-test-proxy/urls"
 	"io"
 	"net/http"
+	"slices"
 )
 
 type Builder struct {
@@ -109,13 +111,52 @@ func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.Respon
 }
 
 func responseHTTPEvent(interceptor *ResponseWriterInterceptor) HTTPEvent {
-	body := interceptor.bodyBuffer.String()
+	headerCopy := header.Clone(interceptor.w.Header())
+	body := bodyBufferToString(interceptor.bodyBuffer, headerCopy)
 	return HTTPEvent{
 		EventType: ResponseEventType,
-		Header:    header.Clone(interceptor.w.Header()),
+		Header:    headerCopy,
 		Body:      body,
 		Status:    interceptor.statusCode,
 	}
+}
+
+func bodyBufferToString(bodyBuffer *bytes.Buffer, header map[string][]string) string {
+	if gzipped(header) {
+		compressed := bytes.NewBuffer(bodyBuffer.Bytes())
+		return gunzip(compressed)
+	} else {
+		return bodyBuffer.String()
+	}
+}
+
+func gzipped(header map[string][]string) bool {
+	result := false
+	values, ok := header["Content-Encoding"]
+	if ok {
+		result = slices.Contains(values, "gzip")
+	}
+	return result
+}
+
+func gunzip(compressed *bytes.Buffer) string {
+	decompressed := &bytes.Buffer{}
+	gzipReader, err := gzip.NewReader(compressed)
+	if err != nil {
+		return fmt.Sprintf("<gzip error: %s>\n", err)
+	}
+
+	_, err = io.Copy(decompressed, gzipReader)
+	if err != nil {
+		return fmt.Sprintf("<copy error: %s>\n", err)
+	}
+
+	err = gzipReader.Close()
+	if err != nil {
+		return fmt.Sprintf("<gzip error: %s>\n", err)
+	}
+
+	return decompressed.String()
 }
 
 func (b *Builder) requestHTTPEvent(r *http.Request) HTTPEvent {

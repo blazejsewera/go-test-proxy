@@ -55,9 +55,12 @@ func TestPathEchoServer(t *testing.T) {
 // See: res.ReferenceBody
 func GzipServer() (url string, closeServer func()) {
 	backendEndpoint := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.Header().Set("Content-Encoding", "gzip")
 		gzipped := gzip.NewWriter(w)
 		must.Succeed(gzipped.Write([]byte(res.ReferenceBody())))
 		_ = gzipped.Close()
+		must.Succeed(w.Write([]byte(res.ReferenceBody())))
 	})
 
 	backend := httptest.NewServer(backendEndpoint)
