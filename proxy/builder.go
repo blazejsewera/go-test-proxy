@@ -68,15 +68,17 @@ type ResponseWriterInterceptor struct {
 	w          http.ResponseWriter
 	bodyBuffer *bytes.Buffer
 	statusCode int
+	monitor    Monitor
 }
 
 var _ http.ResponseWriter = (*ResponseWriterInterceptor)(nil)
 
-func NewResponseWriterInterceptor(w http.ResponseWriter) *ResponseWriterInterceptor {
+func NewResponseWriterInterceptor(w http.ResponseWriter, monitor Monitor) *ResponseWriterInterceptor {
 	return &ResponseWriterInterceptor{
 		w:          w,
 		bodyBuffer: bytes.NewBuffer([]byte{}),
 		statusCode: http.StatusOK,
+		monitor:    monitor,
 	}
 }
 
@@ -96,7 +98,7 @@ func (i *ResponseWriterInterceptor) WriteHeader(statusCode int) {
 func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.ResponseWriter, r *http.Request)) *Builder {
 	wrapperFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b.Monitor.HTTPEvent(b.requestHTTPEvent(r))
-		interceptor := NewResponseWriterInterceptor(w)
+		interceptor := NewResponseWriterInterceptor(w, b.Monitor)
 		handlerFunc(interceptor, r)
 		b.Monitor.HTTPEvent(responseHTTPEvent(interceptor))
 
@@ -112,7 +114,7 @@ func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.Respon
 
 func responseHTTPEvent(interceptor *ResponseWriterInterceptor) HTTPEvent {
 	headerCopy := header.Clone(interceptor.w.Header())
-	body := bodyBufferToString(interceptor.bodyBuffer, headerCopy)
+	body := interceptor.bodyBufferToString(interceptor.bodyBuffer, headerCopy)
 	return HTTPEvent{
 		EventType: ResponseEventType,
 		Header:    headerCopy,
@@ -121,10 +123,10 @@ func responseHTTPEvent(interceptor *ResponseWriterInterceptor) HTTPEvent {
 	}
 }
 
-func bodyBufferToString(bodyBuffer *bytes.Buffer, header map[string][]string) string {
+func (i *ResponseWriterInterceptor) bodyBufferToString(bodyBuffer *bytes.Buffer, header map[string][]string) string {
 	if gzipped(header) {
 		compressed := bytes.NewBuffer(bodyBuffer.Bytes())
-		return gunzip(compressed)
+		return i.gunzip(compressed)
 	} else {
 		return bodyBuffer.String()
 	}
@@ -139,21 +141,24 @@ func gzipped(header map[string][]string) bool {
 	return result
 }
 
-func gunzip(compressed *bytes.Buffer) string {
+func (i *ResponseWriterInterceptor) gunzip(compressed *bytes.Buffer) string {
 	decompressed := &bytes.Buffer{}
 	gzipReader, err := gzip.NewReader(compressed)
 	if err != nil {
-		return fmt.Sprintf("<gzip error: %s>\n", err)
+		i.monitor.Err(err)
+		return ""
 	}
 
 	_, err = io.Copy(decompressed, gzipReader)
 	if err != nil {
-		return fmt.Sprintf("<copy error: %s>\n", err)
+		i.monitor.Err(err)
+		return ""
 	}
 
 	err = gzipReader.Close()
 	if err != nil {
-		return fmt.Sprintf("<gzip error: %s>\n", err)
+		i.monitor.Err(err)
+		return ""
 	}
 
 	return decompressed.String()
@@ -176,12 +181,12 @@ func (b *Builder) bodyToStringAndReader(body io.ReadCloser) (string, io.ReadClos
 	bodyBytes, err := io.ReadAll(body)
 	if err != nil {
 		b.Monitor.Err(fmt.Errorf("read request body: %s", err))
-		return "ERROR WHEN READING BODY", nil
+		return "", nil
 	}
 	err = body.Close()
 	if err != nil {
 		b.Monitor.Err(fmt.Errorf("close request body: %s", err))
-		return "ERROR WHEN CLOSING BODY READER", nil
+		return "", nil
 	}
 	return string(bodyBytes), io.NopCloser(bytes.NewReader(bodyBytes))
 }
