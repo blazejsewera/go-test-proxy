@@ -11,18 +11,26 @@ import (
 func TestCombine(t *testing.T) {
 	monitor1 := new(CountingMonitor)
 	monitor2 := new(CountingMonitor)
+	monitor3 := new(CountingMonitor)
 
-	var tested proxy.Monitor = monitor.Combine(monitor1, monitor2)
+	tested := monitor.Combine(monitor1, monitor2)
+	tested.Add(monitor3)
+
 	tested.HTTPEvent(proxy.HTTPEvent{EventType: proxy.RequestEventType})
+
 	tested.HTTPEvent(proxy.HTTPEvent{EventType: proxy.ResponseEventType})
+	tested.HTTPEvent(proxy.HTTPEvent{EventType: proxy.ResponseEventType})
+
+	tested.Err(errors.New(""))
+	tested.Err(errors.New(""))
 	tested.Err(errors.New(""))
 
-	assert.Equal(t, 1, monitor1.requestsHandled)
-	assert.Equal(t, 1, monitor1.responsesHandled)
-	assert.Equal(t, 1, monitor1.errorsHandled)
-	assert.Equal(t, 1, monitor2.requestsHandled)
-	assert.Equal(t, 1, monitor2.responsesHandled)
-	assert.Equal(t, 1, monitor2.errorsHandled)
+	monitors := [...]*CountingMonitor{monitor1, monitor2, monitor3}
+	for _, m := range monitors {
+		assert.Equal(t, 1, m.requestsHandled)
+		assert.Equal(t, 2, m.responsesHandled)
+		assert.Equal(t, 3, m.errorsHandled)
+	}
 }
 
 type CountingMonitor struct {
