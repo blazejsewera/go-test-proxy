@@ -1,52 +1,51 @@
 # Go Test Proxy
 
-A Go proxy to plug between the frontend
-and backend services for last-resort testing.
+A Go proxy to plug between the frontend and the backend
+or between backend services for last-resort testing.
 
 ## Why?
 
-Here's the story:
+I only want to see the requests and responses,
+without the necessity to open a debugger.
 
-You are dropped inside a project.
-However, it doesn't have any tests.
-Your onboarding process is nowhere to be seen,
-but somehow you manage to get the application running —
-both the backend and frontend.
+## Quick start
 
-You've got a task:
-add a feature to the frontend application,
-but there's a catch:
-the backend endpoint is not yet implemented.
-Your manager told you that
-"we want only the frontend part for now,"
-and you have to find a way to move forward somehow.
+### Build
 
-Alright, you've been in such situations before.
-You tell your fellow backend expert
-that you want to negotiate how this endpoint should look like,
-but all you hear is that they are not yet assigned to the backend part,
-and they have more important things to do for now.
+```sh
+make build
+```
 
-So you think you will simply write this endpoint yourself,
-but as you wander through the backend code,
-you are astonished how untested the code can be.
-You finally drop this idea,
-instead opting for a simple prototype of this endpoint
-in some kind of Express.js, FastAPI, or some other quick-to-write framework.
+or if you don't have Make:
 
-Your frontend teammate sees you do this
-and wants to get it running on their machine,
-so you spend some totally avoidable amount of time
-helping them set up the right version of Node.js, Yarn, or Python.
+```sh
+go build github.com/blazejsewera/go-test-proxy/cmd/gotestproxy
+```
 
-After all this, it turns out that the application blows up
-without other backend endpoints,
-so you have to forward _all of them_,
-except the one that you want to test.
-You want to just give one binary to your fellow colleagues,
-so they get unblocked.
-You want to be able to just cross-compile it.
-Just do it and after you're done,
-just have another tool in your software engineer's toolbox.
+### Run
 
-This is it. This is a tool.
+```sh
+./gotestproxy --target=https://example.com --port=8000
+```
+
+### Point your client to the proxy
+
+Depending on your project, you want to have something like this:
+
+```yaml
+backendUrl: "http://localhost:8000"
+```
+
+## Mocking certain endpoints
+
+It is easy to quickly mock endpoints with Go Test Proxy,
+simply add a new handler function to the proxy builder.
+
+Go to [main.go](cmd/gotestproxy/main.go) and invoke `builder.WithHandlerFunc("/mockedPath", customFunc)`.
+Then rebuild the project and run it.
+
+## Swapping the monitor implementations
+
+Look at `builder.WithMonitor` and `monitor.Combine` functions.
+The former lets you set any monitor adhering to the `proxy.Monitor` interface.
+The latter lets you combine multiple monitors — they will be called one-by-one.

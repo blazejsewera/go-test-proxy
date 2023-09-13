@@ -1,13 +1,11 @@
-PROXY=github.com/blazejsewera/go-test-proxy/cmd/gotestproxy
-
 .PHONY: build test clean
 
 build:
-	go build $(PROXY)
+	go build github.com/blazejsewera/go-test-proxy/cmd/gotestproxy
 
 test:
 	go test ./...
 
 clean:
-	rm -f $(PROXY_EXE)
+	rm -f gotestproxy
 	go clean -cache -testcache

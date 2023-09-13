@@ -11,38 +11,47 @@ import (
 )
 
 func main() {
-	info := ConfigInfo{Application: "https://github.com/blazejsewera/go-test-proxy"}
-	builder := proxy.NewBuilder()
+	config := parseConfig()
 
-	target := flag.String("target", "", "the target host address, for example, http://example.com")
-	port := flag.Int("port", 8000, "the port on which the proxy server will be running")
-	flag.Parse()
-
-	if target != nil && *target != "" {
-		info.Target = *target
-		builder.WithProxyTarget(*target)
-	}
-
-	if port != nil && *port != 0 {
-		portUint16 := uint16(*port)
-		info.Port = portUint16
-		builder.WithPort(portUint16)
-	}
-
-	builder.WithHandlerFunc("/_info", configInfoHandler(info))
-
-	consoleMonitor := monitor.NewConsoleMonitor(info.Target)
-	curlRequestMonitor := monitor.NewCurlRequestMonitor(info.Target)
+	consoleMonitor := monitor.NewConsoleMonitor(config.Target)
+	curlRequestMonitor := monitor.NewCurlRequestMonitor(config.Target)
 	stderrMonitor := monitor.NewStdErrMonitor()
-	builder.WithMonitor(monitor.Combine(consoleMonitor, curlRequestMonitor, stderrMonitor))
 
-	server := builder.Build()
-	log.Printf("starting proxy server for target: '%s', go to 'http://localhost:%d/_info' to get config", info.Target, info.Port)
-	listenAndServe(server)
+	server := proxy.NewBuilder().
+		WithProxyTarget(config.Target).
+		WithPort(config.Port).
+		WithHandlerFunc("/_config", configInfoHandler(config)).
+		WithMonitor(monitor.Combine(consoleMonitor, curlRequestMonitor, stderrMonitor)).
+		Build()
+
+	listenAndServe(server, config)
 	defer shutdownServer(server)
 }
 
-func listenAndServe(server *http.Server) {
+func parseConfig() Configuration {
+	config := Configuration{Application: "https://github.com/blazejsewera/go-test-proxy"}
+
+	target := flag.String("target", "", "the target host address, for example, https://example.com")
+	port := flag.Int("port", 8000, "the port on which the proxy server will be running")
+	flag.Parse()
+
+	if *target == "" {
+		log.Fatalln("[FATAL] The target cannot be empty. " +
+			"Specify the target server, e.g., https://example.com\n" +
+			"Try: ./gotestproxy --target=https://example.com\n" +
+			"Run with -h for help.")
+	}
+
+	config.Target = *target
+
+	portUint16 := uint16(*port)
+	config.Port = portUint16
+
+	return config
+}
+
+func listenAndServe(server *http.Server, config Configuration) {
+	log.Printf("starting proxy server for target: '%s', go to 'http://localhost:%d/_config' to get config", config.Target, config.Port)
 	err := server.ListenAndServe()
 	if err != nil {
 		log.Fatalln(err)
@@ -56,9 +65,9 @@ func shutdownServer(server *http.Server) {
 	}
 }
 
-func configInfoHandler(info ConfigInfo) func(w http.ResponseWriter, r *http.Request) {
+func configInfoHandler(config Configuration) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		bodyBytes, err := json.Marshal(info)
+		bodyBytes, err := json.Marshal(config)
 		if err != nil {
 			return
 		}
@@ -70,7 +79,7 @@ func configInfoHandler(info ConfigInfo) func(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-type ConfigInfo struct {
+type Configuration struct {
 	Application string `json:"application"`
 	Port        uint16 `json:"port"`
 	Target      string `json:"target"`
