@@ -1,11 +1,13 @@
 package proxy_test
 
 import (
+	"compress/gzip"
 	"github.com/blazejsewera/go-test-proxy/header"
 	"github.com/blazejsewera/go-test-proxy/proxy"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
 	"github.com/blazejsewera/go-test-proxy/test/must"
-	"github.com/blazejsewera/go-test-proxy/test/request"
+	"github.com/blazejsewera/go-test-proxy/test/req"
+	"github.com/blazejsewera/go-test-proxy/test/res"
 	"io"
 	"net/http"
 	"testing"
@@ -28,12 +30,12 @@ func TestProxy(t *testing.T) {
 
 		t.Run("forwards a request with headers to the underlying backend server", func(t *testing.T) {
 			requestPath := "/test"
-			response := must.Succeed(client.Do(request.New(tested.URL, requestPath)))
+			response := must.Succeed(client.Do(req.New(tested.URL, requestPath)))
 
 			assert.Equal(t, http.StatusOK, response.StatusCode)
 			body := must.Succeed(io.ReadAll(response.Body))
 			assert.Equal(t, requestPath, string(body))
-			assert.HeaderContainsExpected(t, request.ReferenceResponseHeader(), response.Header)
+			assert.HeaderContainsExpected(t, req.ReferenceResponseHeader(), response.Header)
 		})
 
 		t.Run("monitors forwarded request and response", func(t *testing.T) {
@@ -42,20 +44,20 @@ func TestProxy(t *testing.T) {
 			requestPath := "/test"
 			requestEvent := proxy.HTTPEvent{
 				EventType: proxy.RequestEventType,
-				Header:    request.ReferenceHeader(),
-				Body:      request.ReferenceBody(),
-				Method:    request.MethodGet(),
+				Header:    req.ReferenceHeader(),
+				Body:      req.ReferenceBody(),
+				Method:    req.MethodGet(),
 				Path:      requestPath,
 			}
 			responseEvent := proxy.HTTPEvent{
 				EventType: proxy.ResponseEventType,
-				Header:    request.ReferenceResponseHeader(),
+				Header:    req.ReferenceResponseHeader(),
 				Body:      requestPath,
 				Status:    http.StatusOK,
 			}
 			expected := []proxy.HTTPEvent{requestEvent, responseEvent}
 
-			_ = must.Succeed(client.Do(request.New(tested.URL, requestPath)))
+			_ = must.Succeed(client.Do(req.New(tested.URL, requestPath)))
 
 			assert.HTTPEventsEqual(t, expected, monitor.Events)
 			assert.Empty(t, monitor.Errors)
@@ -84,7 +86,7 @@ func TestProxy(t *testing.T) {
 		client := tested.Client()
 
 		t.Run("does not forward a request for a custom path and uses a custom handler instead", func(t *testing.T) {
-			response := must.Succeed(client.Do(request.New(tested.URL, customPath)))
+			response := must.Succeed(client.Do(req.New(tested.URL, customPath)))
 
 			assert.Equal(t, http.StatusOK, response.StatusCode)
 			body := must.Succeed(io.ReadAll(response.Body))
@@ -94,12 +96,12 @@ func TestProxy(t *testing.T) {
 
 		t.Run("forwards a request with headers to the underlying backend server for a different path", func(t *testing.T) {
 			requestPath := "/test"
-			response := must.Succeed(client.Do(request.New(tested.URL, requestPath)))
+			response := must.Succeed(client.Do(req.New(tested.URL, requestPath)))
 
 			assert.Equal(t, http.StatusOK, response.StatusCode)
 			body := must.Succeed(io.ReadAll(response.Body))
 			assert.Equal(t, requestPath, string(body))
-			assert.HeaderContainsExpected(t, request.ReferenceResponseHeader(), response.Header)
+			assert.HeaderContainsExpected(t, req.ReferenceResponseHeader(), response.Header)
 		})
 
 		t.Run("monitors request and response handled by custom handler", func(t *testing.T) {
@@ -107,9 +109,9 @@ func TestProxy(t *testing.T) {
 
 			requestEvent := proxy.HTTPEvent{
 				EventType: proxy.RequestEventType,
-				Header:    request.ReferenceHeader(),
-				Body:      request.ReferenceBody(),
-				Method:    request.MethodGet(),
+				Header:    req.ReferenceHeader(),
+				Body:      req.ReferenceBody(),
+				Method:    req.MethodGet(),
 				Path:      customPath,
 			}
 			responseEvent := proxy.HTTPEvent{
@@ -120,10 +122,43 @@ func TestProxy(t *testing.T) {
 			}
 			expected := []proxy.HTTPEvent{requestEvent, responseEvent}
 
-			_ = must.Succeed(client.Do(request.New(tested.URL, customPath)))
+			_ = must.Succeed(client.Do(req.New(tested.URL, customPath)))
 
 			assert.HTTPEventsEqual(t, expected, monitor.Events)
 			assert.Empty(t, monitor.Errors)
 		})
 	})
+
+	t.Run("proxy forwarding gzip-compressed payload", func(t *testing.T) {
+		monitor.Clear()
+
+		backendURL, closeBackend := GzipServer()
+		defer closeBackend()
+
+		tested := BuildTestServer(proxy.NewBuilder().
+			WithProxyTarget(backendURL).
+			WithMonitor(monitor))
+		tested.Start()
+		defer tested.Close()
+
+		client := tested.Client()
+
+		t.Run("forwards it unchanged but monitors it in plain text", func(t *testing.T) {
+			response := must.Succeed(client.Do(req.New(tested.URL, "/")))
+
+			actual := decompress(response.Body)
+			assert.Equal(t, res.ReferenceBody(), actual)
+
+			responseEventBody := monitor.Events[1].Body
+			assert.Equal(t, res.ReferenceBody(), responseEventBody)
+			assert.Empty(t, monitor.Errors)
+		})
+	})
+}
+
+func decompress(compressed io.Reader) string {
+	r := must.Succeed(gzip.NewReader(compressed))
+	b := must.Succeed(io.ReadAll(r))
+	_ = r.Close()
+	return string(b)
 }

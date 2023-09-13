@@ -1,10 +1,12 @@
 package proxy_test
 
 import (
+	"compress/gzip"
 	"github.com/blazejsewera/go-test-proxy/header"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
 	"github.com/blazejsewera/go-test-proxy/test/must"
-	"github.com/blazejsewera/go-test-proxy/test/request"
+	"github.com/blazejsewera/go-test-proxy/test/req"
+	"github.com/blazejsewera/go-test-proxy/test/res"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -20,14 +22,14 @@ func PathEchoServer() (url string, closeServer func()) {
 	}
 
 	backendEndpoint := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		expected := request.ReferenceRequest()
+		expected := req.ReferenceRequest()
 		actual := r
 		err := assert.RequestsEqualExcludingPathAndHost(expected, actual)
 		if err != nil {
 			badRequest(w, err)
 			return
 		}
-		header.CloneToResponseWriter(request.ReferenceResponseHeader(), w)
+		header.CloneToResponseWriter(req.ReferenceResponseHeader(), w)
 		must.Succeed(w.Write([]byte(r.URL.Path)))
 	})
 
@@ -40,9 +42,24 @@ func TestPathEchoServer(t *testing.T) {
 	defer closeServer()
 
 	requestPath := "/test"
-	response := must.Succeed(http.DefaultClient.Do(request.New(url, requestPath)))
+	response := must.Succeed(http.DefaultClient.Do(req.New(url, requestPath)))
 
 	assert.Equal(t, http.StatusOK, response.StatusCode)
 	body := must.Succeed(io.ReadAll(response.Body))
 	assert.Equal(t, requestPath, string(body))
+}
+
+// GzipServer constructs a new httptest.Server
+// that responds with a gzipped body
+// with reference body content.
+// See: res.ReferenceBody
+func GzipServer() (url string, closeServer func()) {
+	backendEndpoint := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gzipped := gzip.NewWriter(w)
+		must.Succeed(gzipped.Write([]byte(res.ReferenceBody())))
+		_ = gzipped.Close()
+	})
+
+	backend := httptest.NewServer(backendEndpoint)
+	return backend.URL, backend.Close
 }
