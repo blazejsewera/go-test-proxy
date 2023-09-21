@@ -41,7 +41,7 @@ func (i *responseInterceptor) WriteHeader(statusCode int) {
 
 func (i *responseInterceptor) responseHTTPEvent() HTTPEvent {
 	h := http.Header{}
-	header.Clone(h, i.responseWriter.Header())
+	header.Copy(h, i.responseWriter.Header())
 	body := i.bodyBufferToString(h)
 	return HTTPEvent{
 		EventType: ResponseEventType,

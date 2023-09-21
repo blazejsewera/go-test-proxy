@@ -50,7 +50,7 @@ func PathEchoServer() (url string, closeServer func()) {
 			badRequest(w, err)
 			return
 		}
-		header.Clone(w.Header(), req.ReferenceResponseHeader())
+		header.Copy(w.Header(), req.ReferenceResponseHeader())
 		must.Succeed(w.Write([]byte(r.URL.Path)))
 	})
 

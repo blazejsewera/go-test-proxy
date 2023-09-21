@@ -52,7 +52,7 @@ func (b *Builder) WithProxyTarget(url string) *Builder {
 			b.Monitor.Err(fmt.Errorf("write response: %s", err))
 			return
 		}
-		header.Clone(w.Header(), response.Header)
+		header.Copy(w.Header(), response.Header)
 	}
 
 	return b.WithHandlerFunc("/", proxyHandler)
@@ -78,7 +78,7 @@ func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.Respon
 
 func (b *Builder) requestHTTPEvent(r *http.Request) HTTPEvent {
 	h := http.Header{}
-	header.Clone(h, r.Header)
+	header.Copy(h, r.Header)
 
 	body, bodyReader := b.bodyToStringAndReader(r.Body)
 	r.Body = bodyReader
