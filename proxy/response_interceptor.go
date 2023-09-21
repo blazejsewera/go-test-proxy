@@ -10,25 +10,25 @@ import (
 )
 
 type responseInterceptor struct {
-	w          http.ResponseWriter
-	bodyBuffer bytes.Buffer
-	statusCode int
-	monitor    errorMonitor
+	responseWriter http.ResponseWriter
+	statusCode     int
+	bodyBuffer     bytes.Buffer
+	monitor        errorMonitor
 }
 
 var _ http.ResponseWriter = (*responseInterceptor)(nil)
 
 func newResponseInterceptor(w http.ResponseWriter, monitor errorMonitor) *responseInterceptor {
 	return &responseInterceptor{
-		w:          w,
-		bodyBuffer: bytes.Buffer{},
-		statusCode: http.StatusOK,
-		monitor:    monitor,
+		responseWriter: w,
+		statusCode:     http.StatusOK,
+		bodyBuffer:     bytes.Buffer{},
+		monitor:        monitor,
 	}
 }
 
 func (i *responseInterceptor) Header() http.Header {
-	return i.w.Header()
+	return i.responseWriter.Header()
 }
 
 func (i *responseInterceptor) Write(body []byte) (int, error) {
@@ -37,11 +37,11 @@ func (i *responseInterceptor) Write(body []byte) (int, error) {
 
 func (i *responseInterceptor) WriteHeader(statusCode int) {
 	i.statusCode = statusCode
-	i.w.WriteHeader(statusCode)
+	i.responseWriter.WriteHeader(statusCode)
 }
 
 func (i *responseInterceptor) responseHTTPEvent() HTTPEvent {
-	headerCopy := header.Clone(i.w.Header())
+	headerCopy := header.Clone(i.responseWriter.Header())
 	body := i.bodyBufferToString(headerCopy)
 	return HTTPEvent{
 		EventType: ResponseEventType,
