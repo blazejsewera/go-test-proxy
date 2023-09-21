@@ -47,17 +47,12 @@ func (b *Builder) WithProxyTarget(url string) *Builder {
 			return
 		}
 		w.WriteHeader(response.StatusCode)
-		bodyBytes, err := io.ReadAll(response.Body)
-		if err != nil {
-			b.Monitor.Err(fmt.Errorf("read response body from target: %s", err))
-			return
-		}
-		_, err = w.Write(bodyBytes)
+		_, err = io.Copy(w, response.Body)
 		if err != nil {
 			b.Monitor.Err(fmt.Errorf("write response: %s", err))
 			return
 		}
-		header.CloneToResponseWriter(response.Header, w)
+		header.Clone(w.Header(), response.Header)
 	}
 
 	return b.WithHandlerFunc("/", proxyHandler)
@@ -82,11 +77,14 @@ func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.Respon
 }
 
 func (b *Builder) requestHTTPEvent(r *http.Request) HTTPEvent {
+	h := http.Header{}
+	header.Clone(h, r.Header)
+
 	body, bodyReader := b.bodyToStringAndReader(r.Body)
 	r.Body = bodyReader
 	return HTTPEvent{
 		EventType: RequestEventType,
-		Header:    header.Clone(r.Header),
+		Header:    h,
 		Body:      body,
 		Method:    r.Method,
 		Path:      r.URL.Path,

@@ -40,11 +40,12 @@ func (i *responseInterceptor) WriteHeader(statusCode int) {
 }
 
 func (i *responseInterceptor) responseHTTPEvent() HTTPEvent {
-	headerCopy := header.Clone(i.responseWriter.Header())
-	body := i.bodyBufferToString(headerCopy)
+	h := http.Header{}
+	header.Clone(h, i.responseWriter.Header())
+	body := i.bodyBufferToString(h)
 	return HTTPEvent{
 		EventType: ResponseEventType,
-		Header:    headerCopy,
+		Header:    h,
 		Body:      body,
 		Status:    i.statusCode,
 	}

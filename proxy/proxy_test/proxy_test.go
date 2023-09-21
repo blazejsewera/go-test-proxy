@@ -102,7 +102,7 @@ func TestProxy(t *testing.T) {
 		customResponseBody := "customResponseBody"
 		customResponseHeader := http.Header{"X-Custom-Header": []string{"Custom-Value"}}
 		customHandler := func(w http.ResponseWriter, r *http.Request) {
-			header.CloneToResponseWriter(customResponseHeader, w)
+			header.Clone(w.Header(), customResponseHeader)
 			must.Succeed(w.Write([]byte(customResponseBody)))
 		}
 
