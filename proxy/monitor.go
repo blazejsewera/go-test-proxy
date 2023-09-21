@@ -31,9 +31,17 @@ type HTTPEvent struct {
 	Status int `json:"status"`
 }
 
-type Monitor interface {
+type eventMonitor interface {
 	HTTPEvent(event HTTPEvent)
+}
+
+type errorMonitor interface {
 	Err(err error)
+}
+
+type Monitor interface {
+	eventMonitor
+	errorMonitor
 }
 
 type DefaultMonitor struct{}
