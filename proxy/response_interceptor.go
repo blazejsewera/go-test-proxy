@@ -13,12 +13,12 @@ type responseInterceptor struct {
 	w          http.ResponseWriter
 	bodyBuffer bytes.Buffer
 	statusCode int
-	monitor    Monitor
+	monitor    errorMonitor
 }
 
 var _ http.ResponseWriter = (*responseInterceptor)(nil)
 
-func newResponseInterceptor(w http.ResponseWriter, monitor Monitor) *responseInterceptor {
+func newResponseInterceptor(w http.ResponseWriter, monitor errorMonitor) *responseInterceptor {
 	return &responseInterceptor{
 		w:          w,
 		bodyBuffer: bytes.Buffer{},
