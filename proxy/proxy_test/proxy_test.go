@@ -9,6 +9,7 @@ import (
 	"github.com/blazejsewera/go-test-proxy/test/res"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -19,7 +20,7 @@ func TestProxy(t *testing.T) {
 		backendURL, closeBackend := PathEchoServer()
 		defer closeBackend()
 
-		tested := BuildTestServer(proxy.NewBuilder().
+		tested := buildTestServer(proxy.NewBuilder().
 			WithProxyTarget(backendURL).
 			WithMonitor(monitor))
 		tested.Start()
@@ -75,7 +76,7 @@ func TestProxy(t *testing.T) {
 			must.Succeed(w.Write([]byte(customResponseBody)))
 		}
 
-		tested := BuildTestServer(proxy.NewBuilder().
+		tested := buildTestServer(proxy.NewBuilder().
 			WithHandlerFunc(customPath, customHandler).
 			WithProxyTarget(backendURL).
 			WithMonitor(monitor))
@@ -134,7 +135,7 @@ func TestProxy(t *testing.T) {
 		backendURL, closeBackend := GzipServer()
 		defer closeBackend()
 
-		tested := BuildTestServer(proxy.NewBuilder().
+		tested := buildTestServer(proxy.NewBuilder().
 			WithProxyTarget(backendURL).
 			WithMonitor(monitor))
 		tested.Start()
@@ -155,6 +156,10 @@ func TestProxy(t *testing.T) {
 			assert.Empty(t, monitor.Errors)
 		})
 	})
+}
+
+func buildTestServer(builder *proxy.Builder) *httptest.Server {
+	return httptest.NewUnstartedServer(builder.Router)
 }
 
 func readBody(r io.Reader) string {

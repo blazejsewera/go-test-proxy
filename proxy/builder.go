@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"bytes"
-	"compress/gzip"
 	"fmt"
 	"github.com/blazejsewera/go-test-proxy/header"
 	"github.com/blazejsewera/go-test-proxy/urls"
@@ -64,43 +63,12 @@ func (b *Builder) WithProxyTarget(url string) *Builder {
 	return b.WithHandlerFunc("/", proxyHandler)
 }
 
-type ResponseWriterInterceptor struct {
-	w          http.ResponseWriter
-	bodyBuffer *bytes.Buffer
-	statusCode int
-	monitor    Monitor
-}
-
-var _ http.ResponseWriter = (*ResponseWriterInterceptor)(nil)
-
-func NewResponseWriterInterceptor(w http.ResponseWriter, monitor Monitor) *ResponseWriterInterceptor {
-	return &ResponseWriterInterceptor{
-		w:          w,
-		bodyBuffer: bytes.NewBuffer([]byte{}),
-		statusCode: http.StatusOK,
-		monitor:    monitor,
-	}
-}
-
-func (i *ResponseWriterInterceptor) Header() http.Header {
-	return i.w.Header()
-}
-
-func (i *ResponseWriterInterceptor) Write(body []byte) (int, error) {
-	return i.bodyBuffer.Write(body)
-}
-
-func (i *ResponseWriterInterceptor) WriteHeader(statusCode int) {
-	i.statusCode = statusCode
-	i.w.WriteHeader(statusCode)
-}
-
 func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.ResponseWriter, r *http.Request)) *Builder {
 	wrapperFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b.Monitor.HTTPEvent(b.requestHTTPEvent(r))
 		interceptor := NewResponseWriterInterceptor(w, b.Monitor)
 		handlerFunc(interceptor, r)
-		b.Monitor.HTTPEvent(responseHTTPEvent(interceptor))
+		b.Monitor.HTTPEvent(interceptor.responseHTTPEvent())
 
 		_, err := io.Copy(w, interceptor.bodyBuffer)
 		if err != nil {
@@ -112,26 +80,6 @@ func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.Respon
 	return b
 }
 
-func responseHTTPEvent(interceptor *ResponseWriterInterceptor) HTTPEvent {
-	headerCopy := header.Clone(interceptor.w.Header())
-	body := interceptor.bodyBufferToString(interceptor.bodyBuffer, headerCopy)
-	return HTTPEvent{
-		EventType: ResponseEventType,
-		Header:    headerCopy,
-		Body:      body,
-		Status:    interceptor.statusCode,
-	}
-}
-
-func (i *ResponseWriterInterceptor) bodyBufferToString(bodyBuffer *bytes.Buffer, header map[string][]string) string {
-	if gzipped(header) {
-		compressed := bytes.NewBuffer(bodyBuffer.Bytes())
-		return i.gunzip(compressed)
-	} else {
-		return bodyBuffer.String()
-	}
-}
-
 func gzipped(header map[string][]string) bool {
 	result := false
 	values, ok := header["Content-Encoding"]
@@ -139,29 +87,6 @@ func gzipped(header map[string][]string) bool {
 		result = slices.Contains(values, "gzip")
 	}
 	return result
-}
-
-func (i *ResponseWriterInterceptor) gunzip(compressed *bytes.Buffer) string {
-	decompressed := &bytes.Buffer{}
-	gzipReader, err := gzip.NewReader(compressed)
-	if err != nil {
-		i.monitor.Err(err)
-		return ""
-	}
-
-	_, err = io.Copy(decompressed, gzipReader)
-	if err != nil {
-		i.monitor.Err(err)
-		return ""
-	}
-
-	err = gzipReader.Close()
-	if err != nil {
-		i.monitor.Err(err)
-		return ""
-	}
-
-	return decompressed.String()
 }
 
 func (b *Builder) requestHTTPEvent(r *http.Request) HTTPEvent {

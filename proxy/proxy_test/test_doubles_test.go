@@ -3,6 +3,7 @@ package proxy_test
 import (
 	"compress/gzip"
 	"github.com/blazejsewera/go-test-proxy/header"
+	"github.com/blazejsewera/go-test-proxy/proxy"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
 	"github.com/blazejsewera/go-test-proxy/test/must"
 	"github.com/blazejsewera/go-test-proxy/test/req"
@@ -12,6 +13,26 @@ import (
 	"net/http/httptest"
 	"testing"
 )
+
+type MonitorSpy struct {
+	Events []proxy.HTTPEvent
+	Errors []error
+}
+
+var _ proxy.Monitor = (*MonitorSpy)(nil)
+
+func (m *MonitorSpy) HTTPEvent(event proxy.HTTPEvent) {
+	m.Events = append(m.Events, event)
+}
+
+func (m *MonitorSpy) Err(err error) {
+	m.Errors = append(m.Errors, err)
+}
+
+func (m *MonitorSpy) Clear() {
+	m.Events = []proxy.HTTPEvent{}
+	m.Errors = []error{}
+}
 
 // PathEchoServer constructs a new httptest.Server
 // that responds with the Path of a Request it received
