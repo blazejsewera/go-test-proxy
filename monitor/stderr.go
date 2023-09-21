@@ -2,7 +2,7 @@ package monitor
 
 import (
 	"fmt"
-	"github.com/blazejsewera/go-test-proxy/event"
+	"github.com/blazejsewera/go-test-proxy/monitor/event"
 	"os"
 )
 

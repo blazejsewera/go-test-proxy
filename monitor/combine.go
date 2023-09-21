@@ -1,6 +1,8 @@
 package monitor
 
-import "github.com/blazejsewera/go-test-proxy/event"
+import (
+	"github.com/blazejsewera/go-test-proxy/monitor/event"
+)
 
 type CombinedMonitor struct {
 	monitors []Monitor
@@ -8,9 +10,9 @@ type CombinedMonitor struct {
 
 var _ Monitor = (*CombinedMonitor)(nil)
 
-func (c *CombinedMonitor) HTTPEvent(event event.HTTP) {
+func (c *CombinedMonitor) HTTPEvent(e event.HTTP) {
 	for _, m := range c.monitors {
-		m.HTTPEvent(event)
+		m.HTTPEvent(e)
 	}
 }
 

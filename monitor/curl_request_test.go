@@ -1,8 +1,8 @@
 package monitor_test
 
 import (
-	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/monitor"
+	"github.com/blazejsewera/go-test-proxy/monitor/event"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
 	"net/http"
 	"regexp"

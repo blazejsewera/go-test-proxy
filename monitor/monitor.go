@@ -1,9 +1,11 @@
 package monitor
 
-import "github.com/blazejsewera/go-test-proxy/event"
+import (
+	"github.com/blazejsewera/go-test-proxy/monitor/event"
+)
 
 type Monitor interface {
-	HTTPEvent(event event.HTTP)
+	HTTPEvent(e event.HTTP)
 	Err(err error)
 }
 
