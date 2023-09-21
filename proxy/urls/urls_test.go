@@ -1,8 +1,8 @@
 package urls_test
 
 import (
+	"github.com/blazejsewera/go-test-proxy/proxy/urls"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
-	"github.com/blazejsewera/go-test-proxy/urls"
 	"net/url"
 	"testing"
 )

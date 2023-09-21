@@ -2,9 +2,9 @@ package proxy
 
 import (
 	"fmt"
-	"github.com/blazejsewera/go-test-proxy/header"
 	"github.com/blazejsewera/go-test-proxy/monitor"
-	"github.com/blazejsewera/go-test-proxy/urls"
+	"github.com/blazejsewera/go-test-proxy/proxy/header"
+	"github.com/blazejsewera/go-test-proxy/proxy/urls"
 	"io"
 	"net/http"
 )
