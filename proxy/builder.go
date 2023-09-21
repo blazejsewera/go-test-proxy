@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/blazejsewera/go-test-proxy/header"
-	"github.com/blazejsewera/go-test-proxy/urls"
 	"io"
 	"net/http"
 )
@@ -34,28 +33,7 @@ func (b *Builder) WithMonitor(monitor Monitor) *Builder {
 }
 
 func (b *Builder) WithProxyTarget(url string) *Builder {
-	proxyHandler := func(w http.ResponseWriter, r *http.Request) {
-		targetURL := urls.ForwardedURL(url, r.URL)
-
-		r.RequestURI = ""
-		r.Host = targetURL.Host
-		r.URL = targetURL
-
-		response, err := http.DefaultClient.Do(r)
-		if err != nil {
-			b.Monitor.Err(fmt.Errorf("client request to target: %s", err))
-			return
-		}
-		w.WriteHeader(response.StatusCode)
-		_, err = io.Copy(w, response.Body)
-		if err != nil {
-			b.Monitor.Err(fmt.Errorf("write response: %s", err))
-			return
-		}
-		header.Copy(w.Header(), response.Header)
-	}
-
-	return b.WithHandlerFunc("/", proxyHandler)
+	return b.WithHandlerFunc("/", proxyHandler(b.Monitor, url))
 }
 
 func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.ResponseWriter, r *http.Request)) *Builder {
