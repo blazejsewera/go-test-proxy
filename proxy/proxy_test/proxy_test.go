@@ -76,7 +76,7 @@ func TestProxy(t *testing.T) {
 
 		client := tested.Client()
 
-		t.Run("forwards and monitors 404 response status", func(t *testing.T) {
+		t.Run("forwards and monitors 404 status code", func(t *testing.T) {
 			monitor.Clear()
 
 			requestPath := "/test"
@@ -85,8 +85,9 @@ func TestProxy(t *testing.T) {
 				Status:    http.StatusNotFound,
 			}
 
-			_ = must.Succeed(client.Do(req.New(tested.URL, requestPath)))
+			response := must.Succeed(client.Do(req.New(tested.URL, requestPath)))
 
+			assert.Equal(t, http.StatusNotFound, response.StatusCode)
 			actualResponseEvent := monitor.Events[1]
 			assert.HTTPEventsEqual(t, expectedResponseEvent, actualResponseEvent)
 			assert.Empty(t, monitor.Errors)
