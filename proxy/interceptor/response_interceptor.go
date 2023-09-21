@@ -1,26 +1,28 @@
-package proxy
+package interceptor
 
 import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
+	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/header"
+	"github.com/blazejsewera/go-test-proxy/monitor"
 	"io"
 	"net/http"
 	"slices"
 )
 
-type responseInterceptor struct {
+type ResponseInterceptor struct {
 	responseWriter http.ResponseWriter
 	statusCode     int
 	bodyBuffer     bytes.Buffer
-	monitor        Monitor
+	monitor        monitor.Monitor
 }
 
-var _ http.ResponseWriter = (*responseInterceptor)(nil)
+var _ http.ResponseWriter = (*ResponseInterceptor)(nil)
 
-func newResponseInterceptor(w http.ResponseWriter, monitor Monitor) *responseInterceptor {
-	return &responseInterceptor{
+func NewResponseInterceptor(w http.ResponseWriter, monitor monitor.Monitor) *ResponseInterceptor {
+	return &ResponseInterceptor{
 		responseWriter: w,
 		statusCode:     http.StatusOK,
 		bodyBuffer:     bytes.Buffer{},
@@ -28,19 +30,19 @@ func newResponseInterceptor(w http.ResponseWriter, monitor Monitor) *responseInt
 	}
 }
 
-func (i *responseInterceptor) Header() http.Header {
+func (i *ResponseInterceptor) Header() http.Header {
 	return i.responseWriter.Header()
 }
 
-func (i *responseInterceptor) Write(body []byte) (int, error) {
+func (i *ResponseInterceptor) Write(body []byte) (int, error) {
 	return i.bodyBuffer.Write(body)
 }
 
-func (i *responseInterceptor) WriteHeader(statusCode int) {
+func (i *ResponseInterceptor) WriteHeader(statusCode int) {
 	i.statusCode = statusCode
 }
 
-func (i *responseInterceptor) monitorAndForwardResponse() {
+func (i *ResponseInterceptor) MonitorAndForwardResponse() {
 	i.monitor.HTTPEvent(i.responseHTTPEvent())
 
 	i.responseWriter.WriteHeader(i.statusCode)
@@ -50,19 +52,19 @@ func (i *responseInterceptor) monitorAndForwardResponse() {
 	}
 }
 
-func (i *responseInterceptor) responseHTTPEvent() HTTPEvent {
+func (i *ResponseInterceptor) responseHTTPEvent() event.HTTP {
 	h := http.Header{}
 	header.Copy(h, i.responseWriter.Header())
 	body := i.bodyBufferToString(h)
-	return HTTPEvent{
-		EventType: ResponseEventType,
+	return event.HTTP{
+		EventType: event.ResponseEventType,
 		Header:    h,
 		Body:      body,
 		Status:    i.statusCode,
 	}
 }
 
-func (i *responseInterceptor) bodyBufferToString(header map[string][]string) string {
+func (i *ResponseInterceptor) bodyBufferToString(header map[string][]string) string {
 	if gzipped(header) {
 		compressed := bytes.NewBuffer(i.bodyBuffer.Bytes())
 		return i.gunzip(compressed)
@@ -80,7 +82,7 @@ func gzipped(header map[string][]string) bool {
 	return result
 }
 
-func (i *responseInterceptor) gunzip(compressed *bytes.Buffer) string {
+func (i *ResponseInterceptor) gunzip(compressed *bytes.Buffer) string {
 	decompressed := &bytes.Buffer{}
 	gzipReader, err := gzip.NewReader(compressed)
 	if err != nil {

@@ -2,30 +2,30 @@ package monitor
 
 import (
 	"fmt"
-	"github.com/blazejsewera/go-test-proxy/proxy"
+	event2 "github.com/blazejsewera/go-test-proxy/event"
 )
 
 type console struct {
 	target string
 }
 
-var _ proxy.Monitor = (*console)(nil)
+var _ Monitor = (*console)(nil)
 
-func NewConsoleMonitor(target string) proxy.Monitor {
+func NewConsoleMonitor(target string) Monitor {
 	return &console{
 		target: target,
 	}
 }
 
-func (c *console) HTTPEvent(event proxy.HTTPEvent) {
-	if event.EventType == proxy.RequestEventType {
+func (c *console) HTTPEvent(event event2.HTTP) {
+	if event.EventType == event2.RequestEventType {
 		c.printRequest(event)
-	} else if event.EventType == proxy.ResponseEventType {
+	} else if event.EventType == event2.ResponseEventType {
 		c.printResponse(event)
 	}
 }
 
-func (c *console) printRequest(event proxy.HTTPEvent) {
+func (c *console) printRequest(event event2.HTTP) {
 	fmt.Print("\n===== REQUEST =====\n")
 	query := ""
 	if event.Query != "" {
@@ -40,7 +40,7 @@ func (c *console) printRequest(event proxy.HTTPEvent) {
 	fmt.Print("===================\n")
 }
 
-func (c *console) printResponse(event proxy.HTTPEvent) {
+func (c *console) printResponse(event event2.HTTP) {
 	fmt.Print("\n===== RESPONSE =====\n")
 	fmt.Printf("STATUS: %d\n", event.Status)
 	fmt.Print("--HEADER--\n")

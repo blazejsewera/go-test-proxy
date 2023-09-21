@@ -1,6 +1,7 @@
 package proxy_test
 
 import (
+	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/header"
 	"github.com/blazejsewera/go-test-proxy/proxy"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
@@ -14,7 +15,7 @@ import (
 )
 
 func TestProxy(t *testing.T) {
-	monitor := new(MonitorSpy)
+	monitorSpy := new(MonitorSpy)
 
 	t.Run("proxy without any custom handler", func(t *testing.T) {
 		backendURL, closeBackend := PathEchoServer()
@@ -22,7 +23,7 @@ func TestProxy(t *testing.T) {
 
 		tested := buildTestServer(proxy.NewBuilder().
 			WithProxyTarget(backendURL).
-			WithMonitor(monitor))
+			WithMonitor(monitorSpy))
 		tested.Start()
 		defer tested.Close()
 
@@ -39,28 +40,28 @@ func TestProxy(t *testing.T) {
 		})
 
 		t.Run("monitors forwarded request and response", func(t *testing.T) {
-			monitor.Clear()
+			monitorSpy.Clear()
 
 			requestPath := "/test"
-			requestEvent := proxy.HTTPEvent{
-				EventType: proxy.RequestEventType,
+			requestEvent := event.HTTP{
+				EventType: event.RequestEventType,
 				Header:    req.ReferenceHeader(),
 				Body:      req.ReferenceBody(),
 				Method:    req.MethodGet(),
 				Path:      requestPath,
 			}
-			responseEvent := proxy.HTTPEvent{
-				EventType: proxy.ResponseEventType,
+			responseEvent := event.HTTP{
+				EventType: event.ResponseEventType,
 				Header:    req.ReferenceResponseHeader(),
 				Body:      requestPath,
 				Status:    http.StatusOK,
 			}
-			expected := []proxy.HTTPEvent{requestEvent, responseEvent}
+			expected := []event.HTTP{requestEvent, responseEvent}
 
 			_ = must.Succeed(client.Do(req.New(tested.URL, requestPath)))
 
-			assert.HTTPEventListEqual(t, expected, monitor.Events)
-			assert.Empty(t, monitor.Errors)
+			assert.HTTPEventListEqual(t, expected, monitorSpy.Events)
+			assert.Empty(t, monitorSpy.Errors)
 		})
 	})
 
@@ -70,27 +71,27 @@ func TestProxy(t *testing.T) {
 
 		tested := buildTestServer(proxy.NewBuilder().
 			WithProxyTarget(backendURL).
-			WithMonitor(monitor))
+			WithMonitor(monitorSpy))
 		tested.Start()
 		defer tested.Close()
 
 		client := tested.Client()
 
 		t.Run("forwards and monitors 404 status code", func(t *testing.T) {
-			monitor.Clear()
+			monitorSpy.Clear()
 
 			requestPath := "/test"
-			expectedResponseEvent := proxy.HTTPEvent{
-				EventType: proxy.ResponseEventType,
+			expectedResponseEvent := event.HTTP{
+				EventType: event.ResponseEventType,
 				Status:    http.StatusNotFound,
 			}
 
 			response := must.Succeed(client.Do(req.New(tested.URL, requestPath)))
 
 			assert.Equal(t, http.StatusNotFound, response.StatusCode)
-			actualResponseEvent := monitor.Events[1]
+			actualResponseEvent := monitorSpy.Events[1]
 			assert.HTTPEventsEqual(t, expectedResponseEvent, actualResponseEvent)
-			assert.Empty(t, monitor.Errors)
+			assert.Empty(t, monitorSpy.Errors)
 		})
 	})
 
@@ -109,7 +110,7 @@ func TestProxy(t *testing.T) {
 		tested := buildTestServer(proxy.NewBuilder().
 			WithHandlerFunc(customPath, customHandler).
 			WithProxyTarget(backendURL).
-			WithMonitor(monitor))
+			WithMonitor(monitorSpy))
 		tested.Start()
 		defer tested.Close()
 
@@ -135,39 +136,39 @@ func TestProxy(t *testing.T) {
 		})
 
 		t.Run("monitors request and response handled by custom handler", func(t *testing.T) {
-			monitor.Clear()
+			monitorSpy.Clear()
 
-			requestEvent := proxy.HTTPEvent{
-				EventType: proxy.RequestEventType,
+			requestEvent := event.HTTP{
+				EventType: event.RequestEventType,
 				Header:    req.ReferenceHeader(),
 				Body:      req.ReferenceBody(),
 				Method:    req.MethodGet(),
 				Path:      customPath,
 			}
-			responseEvent := proxy.HTTPEvent{
-				EventType: proxy.ResponseEventType,
+			responseEvent := event.HTTP{
+				EventType: event.ResponseEventType,
 				Header:    http.Header{},
 				Body:      customResponseBody,
 				Status:    http.StatusOK,
 			}
-			expected := []proxy.HTTPEvent{requestEvent, responseEvent}
+			expected := []event.HTTP{requestEvent, responseEvent}
 
 			_ = must.Succeed(client.Do(req.New(tested.URL, customPath)))
 
-			assert.HTTPEventListEqual(t, expected, monitor.Events)
-			assert.Empty(t, monitor.Errors)
+			assert.HTTPEventListEqual(t, expected, monitorSpy.Events)
+			assert.Empty(t, monitorSpy.Errors)
 		})
 	})
 
 	t.Run("proxy forwarding gzip-compressed payload", func(t *testing.T) {
-		monitor.Clear()
+		monitorSpy.Clear()
 
 		backendURL, closeBackend := GzipServer()
 		defer closeBackend()
 
 		tested := buildTestServer(proxy.NewBuilder().
 			WithProxyTarget(backendURL).
-			WithMonitor(monitor))
+			WithMonitor(monitorSpy))
 		tested.Start()
 		defer tested.Close()
 
@@ -181,9 +182,9 @@ func TestProxy(t *testing.T) {
 			actual := readBody(response.Body)
 			assert.Equal(t, res.ReferenceBody(), actual)
 
-			responseEventBody := monitor.Events[1].Body
+			responseEventBody := monitorSpy.Events[1].Body
 			assert.Equal(t, res.ReferenceBody(), responseEventBody)
-			assert.Empty(t, monitor.Errors)
+			assert.Empty(t, monitorSpy.Errors)
 		})
 	})
 }

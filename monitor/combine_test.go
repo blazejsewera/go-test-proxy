@@ -2,8 +2,8 @@ package monitor_test
 
 import (
 	"errors"
+	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/monitor"
-	"github.com/blazejsewera/go-test-proxy/proxy"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
 	"testing"
 )
@@ -16,10 +16,10 @@ func TestCombine(t *testing.T) {
 	tested := monitor.Combine(monitor1, monitor2)
 	tested.Add(monitor3)
 
-	tested.HTTPEvent(proxy.HTTPEvent{EventType: proxy.RequestEventType})
+	tested.HTTPEvent(event.HTTP{EventType: event.RequestEventType})
 
-	tested.HTTPEvent(proxy.HTTPEvent{EventType: proxy.ResponseEventType})
-	tested.HTTPEvent(proxy.HTTPEvent{EventType: proxy.ResponseEventType})
+	tested.HTTPEvent(event.HTTP{EventType: event.ResponseEventType})
+	tested.HTTPEvent(event.HTTP{EventType: event.ResponseEventType})
 
 	tested.Err(errors.New(""))
 	tested.Err(errors.New(""))
@@ -39,8 +39,8 @@ type CountingMonitor struct {
 	errorsHandled    int
 }
 
-func (c *CountingMonitor) HTTPEvent(event proxy.HTTPEvent) {
-	if event.EventType == proxy.RequestEventType {
+func (c *CountingMonitor) HTTPEvent(e event.HTTP) {
+	if e.EventType == event.RequestEventType {
 		c.requestsHandled++
 	} else {
 		c.responsesHandled++

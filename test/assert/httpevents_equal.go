@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/blazejsewera/go-test-proxy/proxy"
+	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/test/must"
 	"testing"
 )
 
-func HTTPEventListEqual(t testing.TB, expected, actual []proxy.HTTPEvent) {
+func HTTPEventListEqual(t testing.TB, expected, actual []event.HTTP) {
 	t.Helper()
 
 	if len(expected) != len(actual) {
@@ -27,7 +27,7 @@ func HTTPEventListEqual(t testing.TB, expected, actual []proxy.HTTPEvent) {
 	}
 }
 
-func HTTPEventsEqual(t testing.TB, expected, actual proxy.HTTPEvent) {
+func HTTPEventsEqual(t testing.TB, expected, actual event.HTTP) {
 	t.Helper()
 	errs := make([]error, 5)
 

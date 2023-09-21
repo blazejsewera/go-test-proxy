@@ -2,7 +2,7 @@ package monitor
 
 import (
 	"fmt"
-	"github.com/blazejsewera/go-test-proxy/proxy"
+	event2 "github.com/blazejsewera/go-test-proxy/event"
 	"io"
 	"os"
 	"strconv"
@@ -13,26 +13,26 @@ type curlRequest struct {
 	output io.Writer
 }
 
-func NewCurlRequestMonitor(target string) proxy.Monitor {
+func NewCurlRequestMonitor(target string) Monitor {
 	return NewCurlRequestMonitorW(target, os.Stdout)
 }
 
-func NewCurlRequestMonitorW(target string, output io.Writer) proxy.Monitor {
+func NewCurlRequestMonitorW(target string, output io.Writer) Monitor {
 	return &curlRequest{target: target, output: output}
 }
 
-func (c *curlRequest) HTTPEvent(event proxy.HTTPEvent) {
+func (c *curlRequest) HTTPEvent(event event2.HTTP) {
 	switch event.EventType {
-	case proxy.RequestEventType:
+	case event2.RequestEventType:
 		c.writeCurlRequest(event)
-	case proxy.ResponseEventType:
+	case event2.ResponseEventType:
 		return
 	default:
 		return
 	}
 }
 
-func (c *curlRequest) writeCurlRequest(event proxy.HTTPEvent) {
+func (c *curlRequest) writeCurlRequest(event event2.HTTP) {
 	result := fmt.Sprintf("curl -X %s%s%s %s\n",
 		event.Method,
 		headerToCurl(event.Header),

@@ -1,34 +1,36 @@
-package proxy
+package interceptor
 
 import (
 	"bytes"
 	"fmt"
+	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/header"
+	"github.com/blazejsewera/go-test-proxy/monitor"
 	"io"
 	"net/http"
 )
 
-type requestInterceptor struct {
+type Request struct {
 	request *http.Request
-	monitor Monitor
+	monitor monitor.Monitor
 }
 
-func newRequestInterceptor(r *http.Request, monitor Monitor) *requestInterceptor {
-	return &requestInterceptor{r, monitor}
+func ForRequest(r *http.Request, monitor monitor.Monitor) *Request {
+	return &Request{r, monitor}
 }
 
-func (i *requestInterceptor) monitorRequest() {
+func (i *Request) MonitorRequest() {
 	i.monitor.HTTPEvent(i.requestHTTPEvent())
 }
 
-func (i *requestInterceptor) requestHTTPEvent() HTTPEvent {
+func (i *Request) requestHTTPEvent() event.HTTP {
 	h := http.Header{}
 	header.Copy(h, i.request.Header)
 
 	body, bodyReader := i.bodyToStringAndReader(i.request.Body)
 	i.request.Body = bodyReader
-	return HTTPEvent{
-		EventType: RequestEventType,
+	return event.HTTP{
+		EventType: event.RequestEventType,
 		Header:    h,
 		Body:      body,
 		Method:    i.request.Method,
@@ -37,7 +39,7 @@ func (i *requestInterceptor) requestHTTPEvent() HTTPEvent {
 	}
 }
 
-func (i *requestInterceptor) bodyToStringAndReader(body io.ReadCloser) (string, io.ReadCloser) {
+func (i *Request) bodyToStringAndReader(body io.ReadCloser) (string, io.ReadCloser) {
 	bodyBytes, err := io.ReadAll(body)
 	if err != nil {
 		i.monitor.Err(fmt.Errorf("read request body: %s", err))

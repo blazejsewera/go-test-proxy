@@ -2,8 +2,9 @@ package proxy_test
 
 import (
 	"compress/gzip"
+	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/header"
-	"github.com/blazejsewera/go-test-proxy/proxy"
+	"github.com/blazejsewera/go-test-proxy/monitor"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
 	"github.com/blazejsewera/go-test-proxy/test/must"
 	"github.com/blazejsewera/go-test-proxy/test/req"
@@ -15,13 +16,13 @@ import (
 )
 
 type MonitorSpy struct {
-	Events []proxy.HTTPEvent
+	Events []event.HTTP
 	Errors []error
 }
 
-var _ proxy.Monitor = (*MonitorSpy)(nil)
+var _ monitor.Monitor = (*MonitorSpy)(nil)
 
-func (m *MonitorSpy) HTTPEvent(event proxy.HTTPEvent) {
+func (m *MonitorSpy) HTTPEvent(event event.HTTP) {
 	m.Events = append(m.Events, event)
 }
 
@@ -30,7 +31,7 @@ func (m *MonitorSpy) Err(err error) {
 }
 
 func (m *MonitorSpy) Clear() {
-	m.Events = []proxy.HTTPEvent{}
+	m.Events = []event.HTTP{}
 	m.Errors = []error{}
 }
 

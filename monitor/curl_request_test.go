@@ -1,8 +1,8 @@
 package monitor_test
 
 import (
+	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/monitor"
-	"github.com/blazejsewera/go-test-proxy/proxy"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
 	"net/http"
 	"regexp"
@@ -13,8 +13,8 @@ import (
 func TestCurlRequestMonitor(t *testing.T) {
 	t.Run("generates a valid curl cmd given request HTTPEvent and target URL", func(t *testing.T) {
 		target := "http://example.com"
-		httpEvent := proxy.HTTPEvent{
-			EventType: proxy.RequestEventType,
+		httpEvent := event.HTTP{
+			EventType: event.RequestEventType,
 			Header: map[string][]string{
 				"Accept":       {"application/json"},
 				"Content-Type": {"application/json"},
@@ -42,7 +42,7 @@ func TestCurlRequestMonitor(t *testing.T) {
 
 	t.Run("discards response HTTPEvent", func(t *testing.T) {
 		target := ""
-		httpEvent := proxy.HTTPEvent{EventType: proxy.ResponseEventType}
+		httpEvent := event.HTTP{EventType: event.ResponseEventType}
 
 		buffer := &strings.Builder{}
 		tested := monitor.NewCurlRequestMonitorW(target, buffer)

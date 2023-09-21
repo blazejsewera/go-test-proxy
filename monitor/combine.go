@@ -1,14 +1,14 @@
 package monitor
 
-import "github.com/blazejsewera/go-test-proxy/proxy"
+import "github.com/blazejsewera/go-test-proxy/event"
 
 type CombinedMonitor struct {
-	monitors []proxy.Monitor
+	monitors []Monitor
 }
 
-var _ proxy.Monitor = (*CombinedMonitor)(nil)
+var _ Monitor = (*CombinedMonitor)(nil)
 
-func (c *CombinedMonitor) HTTPEvent(event proxy.HTTPEvent) {
+func (c *CombinedMonitor) HTTPEvent(event event.HTTP) {
 	for _, m := range c.monitors {
 		m.HTTPEvent(event)
 	}
@@ -20,10 +20,10 @@ func (c *CombinedMonitor) Err(err error) {
 	}
 }
 
-func (c *CombinedMonitor) Add(m proxy.Monitor) {
+func (c *CombinedMonitor) Add(m Monitor) {
 	c.monitors = append(c.monitors, m)
 }
 
-func Combine(monitors ...proxy.Monitor) *CombinedMonitor {
+func Combine(monitors ...Monitor) *CombinedMonitor {
 	return &CombinedMonitor{monitors}
 }

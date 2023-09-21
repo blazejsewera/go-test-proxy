@@ -2,19 +2,21 @@ package proxy
 
 import (
 	"fmt"
+	"github.com/blazejsewera/go-test-proxy/monitor"
+	"github.com/blazejsewera/go-test-proxy/proxy/interceptor"
 	"net/http"
 )
 
 type Builder struct {
 	Router  *http.ServeMux
-	Monitor Monitor
+	Monitor monitor.Monitor
 	port    uint16
 }
 
 func NewBuilder() *Builder {
 	return &Builder{
 		port:    8000,
-		Monitor: DefaultMonitor{},
+		Monitor: monitor.NopMonitor{},
 		Router:  http.NewServeMux(),
 	}
 }
@@ -24,7 +26,7 @@ func (b *Builder) WithPort(port uint16) *Builder {
 	return b
 }
 
-func (b *Builder) WithMonitor(monitor Monitor) *Builder {
+func (b *Builder) WithMonitor(monitor monitor.Monitor) *Builder {
 	b.Monitor = monitor
 	return b
 }
@@ -35,12 +37,12 @@ func (b *Builder) WithProxyTarget(url string) *Builder {
 
 func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.ResponseWriter, r *http.Request)) *Builder {
 	wrapperFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		reqInterceptor := newRequestInterceptor(r, b.Monitor)
-		reqInterceptor.monitorRequest()
+		reqInterceptor := interceptor.ForRequest(r, b.Monitor)
+		reqInterceptor.MonitorRequest()
 
-		resInterceptor := newResponseInterceptor(w, b.Monitor)
+		resInterceptor := interceptor.NewResponseInterceptor(w, b.Monitor)
 		handlerFunc(resInterceptor, r)
-		resInterceptor.monitorAndForwardResponse()
+		resInterceptor.MonitorAndForwardResponse()
 	})
 
 	b.Router.Handle(pattern, wrapperFunc)

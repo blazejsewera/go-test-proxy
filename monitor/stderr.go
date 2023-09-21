@@ -2,13 +2,13 @@ package monitor
 
 import (
 	"fmt"
-	"github.com/blazejsewera/go-test-proxy/proxy"
+	"github.com/blazejsewera/go-test-proxy/event"
 	"os"
 )
 
 type stdErr struct{}
 
-func NewStdErrMonitor() proxy.Monitor {
+func NewStdErrMonitor() Monitor {
 	return &stdErr{}
 }
 
@@ -19,4 +19,4 @@ func (e *stdErr) Err(err error) {
 	}
 }
 
-func (e *stdErr) HTTPEvent(proxy.HTTPEvent) {}
+func (e *stdErr) HTTPEvent(event.HTTP) {}
