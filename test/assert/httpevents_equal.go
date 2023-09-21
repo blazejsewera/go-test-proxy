@@ -9,31 +9,42 @@ import (
 	"testing"
 )
 
-func HTTPEventsEqual(t testing.TB, expected, actual []proxy.HTTPEvent) {
+func HTTPEventListEqual(t testing.TB, expected, actual []proxy.HTTPEvent) {
 	t.Helper()
-	expectedJSON := marshalIndent(expected)
-	actualJSON := marshalIndent(actual)
+
 	if len(expected) != len(actual) {
+		expectedJSON := marshalIndent(expected)
+		actualJSON := marshalIndent(actual)
+
 		t.Errorf("assert: http event lists are of different lengths")
 		t.Errorf("expected = %v\nactual = %v", expectedJSON, actualJSON)
 		return
 	}
-	errs := make([]error, 5)
 
 	for i, expectedEvent := range expected {
 		actualEvent := actual[i]
-		errs = append(errs, assertString("eventType", string(expectedEvent.EventType), string(actualEvent.EventType)))
-		errs = append(errs, assertString("body", expectedEvent.Body, actualEvent.Body))
-		errs = append(errs, assertString("method", expectedEvent.Method, actualEvent.Method))
-		errs = append(errs, assertString("path", expectedEvent.Path, actualEvent.Path))
-		errs = append(errs, assertString("query", expectedEvent.Query, actualEvent.Query))
-		errs = append(errs, assertInt("status", expectedEvent.Status, actualEvent.Status))
-		errs = append(errs, assertHeaderContainsExpected(expectedEvent.Header, actualEvent.Header))
+		HTTPEventsEqual(t, expectedEvent, actualEvent)
 	}
+}
+
+func HTTPEventsEqual(t testing.TB, expected, actual proxy.HTTPEvent) {
+	t.Helper()
+	errs := make([]error, 5)
+
+	errs = append(errs, assertString("eventType", string(expected.EventType), string(actual.EventType)))
+	errs = append(errs, assertString("body", expected.Body, actual.Body))
+	errs = append(errs, assertString("method", expected.Method, actual.Method))
+	errs = append(errs, assertString("path", expected.Path, actual.Path))
+	errs = append(errs, assertString("query", expected.Query, actual.Query))
+	errs = append(errs, assertInt("status", expected.Status, actual.Status))
+	errs = append(errs, assertHeaderContainsExpected(expected.Header, actual.Header))
 
 	if err := errors.Join(errs...); err != nil {
-		t.Errorf("http events assert: %s", err)
-		t.Errorf("expected = %v\nactual = %v", expectedJSON, actualJSON)
+		expectedJSON := marshalIndent(expected)
+		actualJSON := marshalIndent(actual)
+
+		t.Errorf("http events assert: %s\n", err)
+		t.Errorf("expected = %v\nactual = %v\n", expectedJSON, actualJSON)
 	}
 }
 

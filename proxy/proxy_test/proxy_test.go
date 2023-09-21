@@ -34,7 +34,7 @@ func TestProxy(t *testing.T) {
 
 			assert.Equal(t, http.StatusOK, response.StatusCode)
 			body := readBody(response.Body)
-			assert.Equal(t, requestPath, string(body))
+			assert.Equal(t, requestPath, body)
 			assert.HeaderContainsExpected(t, req.ReferenceResponseHeader(), response.Header)
 		})
 
@@ -59,7 +59,36 @@ func TestProxy(t *testing.T) {
 
 			_ = must.Succeed(client.Do(req.New(tested.URL, requestPath)))
 
-			assert.HTTPEventsEqual(t, expected, monitor.Events)
+			assert.HTTPEventListEqual(t, expected, monitor.Events)
+			assert.Empty(t, monitor.Errors)
+		})
+	})
+
+	t.Run("proxy with a target that sends 404 Not Found status", func(t *testing.T) {
+		backendURL, closeBackend := NotFoundServer()
+		defer closeBackend()
+
+		tested := buildTestServer(proxy.NewBuilder().
+			WithProxyTarget(backendURL).
+			WithMonitor(monitor))
+		tested.Start()
+		defer tested.Close()
+
+		client := tested.Client()
+
+		t.Run("forwards and monitors 404 response status", func(t *testing.T) {
+			monitor.Clear()
+
+			requestPath := "/test"
+			expectedResponseEvent := proxy.HTTPEvent{
+				EventType: proxy.ResponseEventType,
+				Status:    http.StatusNotFound,
+			}
+
+			_ = must.Succeed(client.Do(req.New(tested.URL, requestPath)))
+
+			actualResponseEvent := monitor.Events[1]
+			assert.HTTPEventsEqual(t, expectedResponseEvent, actualResponseEvent)
 			assert.Empty(t, monitor.Errors)
 		})
 	})
@@ -90,7 +119,7 @@ func TestProxy(t *testing.T) {
 
 			assert.Equal(t, http.StatusOK, response.StatusCode)
 			body := readBody(response.Body)
-			assert.Equal(t, customResponseBody, string(body))
+			assert.Equal(t, customResponseBody, body)
 			assert.HeaderContainsExpected(t, customResponseHeader, response.Header)
 		})
 
@@ -100,7 +129,7 @@ func TestProxy(t *testing.T) {
 
 			assert.Equal(t, http.StatusOK, response.StatusCode)
 			body := readBody(response.Body)
-			assert.Equal(t, requestPath, string(body))
+			assert.Equal(t, requestPath, body)
 			assert.HeaderContainsExpected(t, req.ReferenceResponseHeader(), response.Header)
 		})
 
@@ -124,7 +153,7 @@ func TestProxy(t *testing.T) {
 
 			_ = must.Succeed(client.Do(req.New(tested.URL, customPath)))
 
-			assert.HTTPEventsEqual(t, expected, monitor.Events)
+			assert.HTTPEventListEqual(t, expected, monitor.Events)
 			assert.Empty(t, monitor.Errors)
 		})
 	})

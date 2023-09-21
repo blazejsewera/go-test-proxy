@@ -37,7 +37,6 @@ func (i *responseInterceptor) Write(body []byte) (int, error) {
 
 func (i *responseInterceptor) WriteHeader(statusCode int) {
 	i.statusCode = statusCode
-	i.responseWriter.WriteHeader(statusCode)
 }
 
 func (i *responseInterceptor) responseHTTPEvent() HTTPEvent {

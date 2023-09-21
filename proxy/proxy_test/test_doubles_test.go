@@ -70,6 +70,16 @@ func TestPathEchoServer(t *testing.T) {
 	assert.Equal(t, requestPath, string(body))
 }
 
+// NotFoundServer constructs a new httptest.Server
+// that always responds with 404 Not Found.
+func NotFoundServer() (url string, closeServer func()) {
+	backendEndpoint := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	})
+	backend := httptest.NewServer(backendEndpoint)
+	return backend.URL, backend.Close
+}
+
 // GzipServer constructs a new httptest.Server
 // that responds with a gzipped body
 // with reference body content.

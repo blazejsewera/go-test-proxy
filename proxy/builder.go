@@ -46,6 +46,7 @@ func (b *Builder) WithProxyTarget(url string) *Builder {
 			b.Monitor.Err(fmt.Errorf("client request to target: %s", err))
 			return
 		}
+		w.WriteHeader(response.StatusCode)
 		bodyBytes, err := io.ReadAll(response.Body)
 		if err != nil {
 			b.Monitor.Err(fmt.Errorf("read response body from target: %s", err))
@@ -69,6 +70,7 @@ func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.Respon
 		handlerFunc(interceptor, r)
 		b.Monitor.HTTPEvent(interceptor.responseHTTPEvent())
 
+		w.WriteHeader(interceptor.statusCode)
 		_, err := io.Copy(w, &interceptor.bodyBuffer)
 		if err != nil {
 			b.Monitor.Err(fmt.Errorf("copy interceptor buffer to response writer: %s", err))
