@@ -1,15 +1,15 @@
-package proxy
+package internal
 
 import (
 	"fmt"
 	"github.com/blazejsewera/go-test-proxy/monitor"
-	"github.com/blazejsewera/go-test-proxy/proxy/header"
-	"github.com/blazejsewera/go-test-proxy/proxy/urls"
+	"github.com/blazejsewera/go-test-proxy/proxy/internal/header"
+	"github.com/blazejsewera/go-test-proxy/proxy/internal/urls"
 	"io"
 	"net/http"
 )
 
-func proxyHandler(monitor monitor.Monitor, url string) func(w http.ResponseWriter, r *http.Request) {
+func ProxyHandler(monitor monitor.Monitor, url string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		targetURL := urls.ForwardedURL(url, r.URL)
 

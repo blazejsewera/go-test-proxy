@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/monitor"
-	"github.com/blazejsewera/go-test-proxy/proxy/header"
+	"github.com/blazejsewera/go-test-proxy/proxy/internal/header"
 	"io"
 	"net/http"
 )

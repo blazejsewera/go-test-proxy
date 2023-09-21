@@ -3,7 +3,8 @@ package proxy
 import (
 	"fmt"
 	"github.com/blazejsewera/go-test-proxy/monitor"
-	"github.com/blazejsewera/go-test-proxy/proxy/interceptor"
+	"github.com/blazejsewera/go-test-proxy/proxy/internal"
+	"github.com/blazejsewera/go-test-proxy/proxy/internal/interceptor"
 	"net/http"
 )
 
@@ -32,7 +33,7 @@ func (b *Builder) WithMonitor(monitor monitor.Monitor) *Builder {
 }
 
 func (b *Builder) WithProxyTarget(url string) *Builder {
-	return b.WithHandlerFunc("/", proxyHandler(b.Monitor, url))
+	return b.WithHandlerFunc("/", internal.ProxyHandler(b.Monitor, url))
 }
 
 func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.ResponseWriter, r *http.Request)) *Builder {
