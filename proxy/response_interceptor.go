@@ -3,6 +3,7 @@ package proxy
 import (
 	"bytes"
 	"compress/gzip"
+	"fmt"
 	"github.com/blazejsewera/go-test-proxy/header"
 	"io"
 	"net/http"
@@ -13,12 +14,12 @@ type responseInterceptor struct {
 	responseWriter http.ResponseWriter
 	statusCode     int
 	bodyBuffer     bytes.Buffer
-	monitor        errorMonitor
+	monitor        Monitor
 }
 
 var _ http.ResponseWriter = (*responseInterceptor)(nil)
 
-func newResponseInterceptor(w http.ResponseWriter, monitor errorMonitor) *responseInterceptor {
+func newResponseInterceptor(w http.ResponseWriter, monitor Monitor) *responseInterceptor {
 	return &responseInterceptor{
 		responseWriter: w,
 		statusCode:     http.StatusOK,
@@ -37,6 +38,16 @@ func (i *responseInterceptor) Write(body []byte) (int, error) {
 
 func (i *responseInterceptor) WriteHeader(statusCode int) {
 	i.statusCode = statusCode
+}
+
+func (i *responseInterceptor) monitorAndForwardResponse() {
+	i.monitor.HTTPEvent(i.responseHTTPEvent())
+
+	i.responseWriter.WriteHeader(i.statusCode)
+	_, err := io.Copy(i.responseWriter, &i.bodyBuffer)
+	if err != nil {
+		i.monitor.Err(fmt.Errorf("copy interceptor buffer to response writer: %s", err))
+	}
 }
 
 func (i *responseInterceptor) responseHTTPEvent() HTTPEvent {

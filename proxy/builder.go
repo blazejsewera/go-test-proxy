@@ -41,15 +41,9 @@ func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.Respon
 		b.Monitor.HTTPEvent(b.requestHTTPEvent(r))
 		interceptor := newResponseInterceptor(w, b.Monitor)
 		handlerFunc(interceptor, r)
-		b.Monitor.HTTPEvent(interceptor.responseHTTPEvent())
-
-		w.WriteHeader(interceptor.statusCode)
-		_, err := io.Copy(w, &interceptor.bodyBuffer)
-		if err != nil {
-			b.Monitor.Err(fmt.Errorf("copy interceptor buffer to response writer: %s", err))
-			return
-		}
+		interceptor.monitorAndForwardResponse()
 	})
+
 	b.Router.Handle(pattern, wrapperFunc)
 	return b
 }
