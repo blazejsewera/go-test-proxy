@@ -1,7 +1,7 @@
 package proxy_test
 
 import (
-	"github.com/blazejsewera/go-test-proxy/monitor/event"
+	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/proxy"
 	"github.com/blazejsewera/go-test-proxy/proxy/header"
 	"github.com/blazejsewera/go-test-proxy/test/assert"

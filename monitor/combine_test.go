@@ -2,8 +2,8 @@ package monitor_test
 
 import (
 	"errors"
+	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/monitor"
-	"github.com/blazejsewera/go-test-proxy/monitor/event"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
 	"testing"
 )

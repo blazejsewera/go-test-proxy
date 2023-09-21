@@ -2,8 +2,8 @@ package proxy_test
 
 import (
 	"compress/gzip"
+	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/monitor"
-	"github.com/blazejsewera/go-test-proxy/monitor/event"
 	"github.com/blazejsewera/go-test-proxy/proxy/header"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
 	"github.com/blazejsewera/go-test-proxy/test/must"

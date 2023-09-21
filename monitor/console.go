@@ -2,7 +2,7 @@ package monitor
 
 import (
 	"fmt"
-	"github.com/blazejsewera/go-test-proxy/monitor/event"
+	"github.com/blazejsewera/go-test-proxy/event"
 )
 
 type console struct {

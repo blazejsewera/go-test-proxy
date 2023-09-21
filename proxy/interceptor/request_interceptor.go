@@ -3,8 +3,8 @@ package interceptor
 import (
 	"bytes"
 	"fmt"
+	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/monitor"
-	"github.com/blazejsewera/go-test-proxy/monitor/event"
 	"github.com/blazejsewera/go-test-proxy/proxy/header"
 	"io"
 	"net/http"
