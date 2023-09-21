@@ -6,42 +6,43 @@ import (
 	"github.com/blazejsewera/go-test-proxy/header"
 	"io"
 	"net/http"
+	"slices"
 )
 
-type ResponseInterceptor struct {
+type responseInterceptor struct {
 	w          http.ResponseWriter
-	bodyBuffer *bytes.Buffer
+	bodyBuffer bytes.Buffer
 	statusCode int
 	monitor    Monitor
 }
 
-var _ http.ResponseWriter = (*ResponseInterceptor)(nil)
+var _ http.ResponseWriter = (*responseInterceptor)(nil)
 
-func NewResponseWriterInterceptor(w http.ResponseWriter, monitor Monitor) *ResponseInterceptor {
-	return &ResponseInterceptor{
+func newResponseInterceptor(w http.ResponseWriter, monitor Monitor) *responseInterceptor {
+	return &responseInterceptor{
 		w:          w,
-		bodyBuffer: bytes.NewBuffer([]byte{}),
+		bodyBuffer: bytes.Buffer{},
 		statusCode: http.StatusOK,
 		monitor:    monitor,
 	}
 }
 
-func (i *ResponseInterceptor) Header() http.Header {
+func (i *responseInterceptor) Header() http.Header {
 	return i.w.Header()
 }
 
-func (i *ResponseInterceptor) Write(body []byte) (int, error) {
+func (i *responseInterceptor) Write(body []byte) (int, error) {
 	return i.bodyBuffer.Write(body)
 }
 
-func (i *ResponseInterceptor) WriteHeader(statusCode int) {
+func (i *responseInterceptor) WriteHeader(statusCode int) {
 	i.statusCode = statusCode
 	i.w.WriteHeader(statusCode)
 }
 
-func (i *ResponseInterceptor) responseHTTPEvent() HTTPEvent {
+func (i *responseInterceptor) responseHTTPEvent() HTTPEvent {
 	headerCopy := header.Clone(i.w.Header())
-	body := i.bodyBufferToString(i.bodyBuffer, headerCopy)
+	body := i.bodyBufferToString(headerCopy)
 	return HTTPEvent{
 		EventType: ResponseEventType,
 		Header:    headerCopy,
@@ -50,16 +51,25 @@ func (i *ResponseInterceptor) responseHTTPEvent() HTTPEvent {
 	}
 }
 
-func (i *ResponseInterceptor) bodyBufferToString(bodyBuffer *bytes.Buffer, header map[string][]string) string {
+func (i *responseInterceptor) bodyBufferToString(header map[string][]string) string {
 	if gzipped(header) {
-		compressed := bytes.NewBuffer(bodyBuffer.Bytes())
+		compressed := bytes.NewBuffer(i.bodyBuffer.Bytes())
 		return i.gunzip(compressed)
 	} else {
-		return bodyBuffer.String()
+		return i.bodyBuffer.String()
 	}
 }
 
-func (i *ResponseInterceptor) gunzip(compressed *bytes.Buffer) string {
+func gzipped(header map[string][]string) bool {
+	result := false
+	values, ok := header["Content-Encoding"]
+	if ok {
+		result = slices.Contains(values, "gzip")
+	}
+	return result
+}
+
+func (i *responseInterceptor) gunzip(compressed *bytes.Buffer) string {
 	decompressed := &bytes.Buffer{}
 	gzipReader, err := gzip.NewReader(compressed)
 	if err != nil {

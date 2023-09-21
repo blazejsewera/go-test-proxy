@@ -7,7 +7,6 @@ import (
 	"github.com/blazejsewera/go-test-proxy/urls"
 	"io"
 	"net/http"
-	"slices"
 )
 
 type Builder struct {
@@ -66,11 +65,11 @@ func (b *Builder) WithProxyTarget(url string) *Builder {
 func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.ResponseWriter, r *http.Request)) *Builder {
 	wrapperFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b.Monitor.HTTPEvent(b.requestHTTPEvent(r))
-		interceptor := NewResponseWriterInterceptor(w, b.Monitor)
+		interceptor := newResponseInterceptor(w, b.Monitor)
 		handlerFunc(interceptor, r)
 		b.Monitor.HTTPEvent(interceptor.responseHTTPEvent())
 
-		_, err := io.Copy(w, interceptor.bodyBuffer)
+		_, err := io.Copy(w, &interceptor.bodyBuffer)
 		if err != nil {
 			b.Monitor.Err(fmt.Errorf("copy interceptor buffer to response writer: %s", err))
 			return
@@ -78,15 +77,6 @@ func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.Respon
 	})
 	b.Router.Handle(pattern, wrapperFunc)
 	return b
-}
-
-func gzipped(header map[string][]string) bool {
-	result := false
-	values, ok := header["Content-Encoding"]
-	if ok {
-		result = slices.Contains(values, "gzip")
-	}
-	return result
 }
 
 func (b *Builder) requestHTTPEvent(r *http.Request) HTTPEvent {
