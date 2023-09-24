@@ -90,7 +90,7 @@ func GzipServer() (url string, closeServer func()) {
 		w.Header().Set("Content-Type", "text/plain")
 		w.Header().Set("Content-Encoding", "gzip")
 		gzipped := gzip.NewWriter(w)
-		must.Succeed(gzipped.Write([]byte(testresponse.ReferenceBody())))
+		must.Succeed(gzipped.Write([]byte(testresponse.ReferenceBody)))
 		_ = gzipped.Close()
 	})
 

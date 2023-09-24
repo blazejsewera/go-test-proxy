@@ -6,8 +6,13 @@ import (
 	"strings"
 )
 
+const (
+	MethodGet     = "GET"
+	ReferenceBody = "body"
+)
+
 func New(baseURL, path string) *http.Request {
-	return mustBuildRequest(MethodGet(), baseURL+path, ReferenceBody(), ReferenceHeader())
+	return mustBuildRequest(MethodGet, baseURL+path, ReferenceBody, ReferenceHeader())
 }
 
 func mustBuildRequest(method, url, body string, header http.Header) *http.Request {
@@ -34,12 +39,4 @@ func ReferenceHeader() http.Header {
 
 func ReferenceResponseHeader() http.Header {
 	return http.Header{"X-Response-Test-Header": []string{"Test-Value"}}
-}
-
-func ReferenceBody() string {
-	return "body"
-}
-
-func MethodGet() string {
-	return "GET"
 }

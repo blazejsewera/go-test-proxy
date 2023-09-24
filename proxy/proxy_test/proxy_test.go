@@ -46,8 +46,8 @@ func TestProxy(t *testing.T) {
 			requestEvent := event.HTTP{
 				EventType: event.RequestEventType,
 				Header:    testrequest.ReferenceHeader(),
-				Body:      testrequest.ReferenceBody(),
-				Method:    testrequest.MethodGet(),
+				Body:      testrequest.ReferenceBody,
+				Method:    testrequest.MethodGet,
 				Path:      requestPath,
 			}
 			responseEvent := event.HTTP{
@@ -141,8 +141,8 @@ func TestProxy(t *testing.T) {
 			requestEvent := event.HTTP{
 				EventType: event.RequestEventType,
 				Header:    testrequest.ReferenceHeader(),
-				Body:      testrequest.ReferenceBody(),
-				Method:    testrequest.MethodGet(),
+				Body:      testrequest.ReferenceBody,
+				Method:    testrequest.MethodGet,
 				Path:      customPath,
 			}
 			responseEvent := event.HTTP{
@@ -180,10 +180,10 @@ func TestProxy(t *testing.T) {
 			// body gets automatically unzipped by http.Client
 			// based on 'Content-Encoding: gzip' header value
 			actual := readBody(response.Body)
-			assert.Equal(t, testresponse.ReferenceBody(), actual)
+			assert.Equal(t, testresponse.ReferenceBody, actual)
 
 			responseEventBody := monitorSpy.Events[1].Body
-			assert.Equal(t, testresponse.ReferenceBody(), responseEventBody)
+			assert.Equal(t, testresponse.ReferenceBody, responseEventBody)
 			assert.Empty(t, monitorSpy.Errors)
 		})
 	})

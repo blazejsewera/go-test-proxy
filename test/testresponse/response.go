@@ -1,5 +1,3 @@
 package testresponse
 
-func ReferenceBody() string {
-	return "response reference body"
-}
+const ReferenceBody = "response reference body"
