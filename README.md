@@ -49,3 +49,29 @@ Then rebuild the project and run it.
 Look at `builder.WithMonitor` and `monitor.Combine` functions.
 The former lets you set any monitor adhering to the `proxy.Monitor` interface.
 The latter lets you combine multiple monitors — they will be called one-by-one.
+
+## Install
+
+To install `gotestproxy` binary, simply run `make install`,
+setting a `PREFIX` that is in your `PATH`.
+
+```sh
+PREFIX=<target_directory> make install
+```
+
+Uninstalling is also very simple:
+
+```sh
+PREFIX=<previously_set_prefix> make uninstall
+```
+
+Alternatively, you can simply remove the `gotestproxy` binary — it's self-contained,
+so it's the only file to remove.
+
+## Build for different targets
+
+You can also build `gotestproxy` for different targets, like windows/amd64:
+
+```sh
+make build-windows-amd64
+```
