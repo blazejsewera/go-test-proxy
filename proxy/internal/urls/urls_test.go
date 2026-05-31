@@ -1,10 +1,11 @@
 package urls_test
 
 import (
-	"github.com/blazejsewera/go-test-proxy/proxy/internal/urls"
-	"github.com/blazejsewera/go-test-proxy/test/assert"
 	"net/url"
 	"testing"
+
+	"github.com/blazejsewera/go-test-proxy/proxy/internal/urls"
+	"github.com/blazejsewera/go-test-proxy/test/assert"
 )
 
 func TestForwardedURL(t *testing.T) {

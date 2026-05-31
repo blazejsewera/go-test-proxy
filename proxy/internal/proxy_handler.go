@@ -2,11 +2,12 @@ package internal
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/blazejsewera/go-test-proxy/monitor"
 	"github.com/blazejsewera/go-test-proxy/proxy/internal/header"
 	"github.com/blazejsewera/go-test-proxy/proxy/internal/urls"
-	"io"
-	"net/http"
 )
 
 func ProxyHandler(monitor monitor.Monitor, url string) func(w http.ResponseWriter, r *http.Request) {

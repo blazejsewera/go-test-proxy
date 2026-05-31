@@ -1,8 +1,6 @@
 package must
 
-import (
-	"fmt"
-)
+import "fmt"
 
 func Succeed[T any](result T, err error) T {
 	if err != nil {

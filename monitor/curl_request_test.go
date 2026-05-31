@@ -1,13 +1,14 @@
 package monitor_test
 
 import (
-	"github.com/blazejsewera/go-test-proxy/event"
-	"github.com/blazejsewera/go-test-proxy/monitor"
-	"github.com/blazejsewera/go-test-proxy/test/assert"
 	"net/http"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/blazejsewera/go-test-proxy/event"
+	"github.com/blazejsewera/go-test-proxy/monitor"
+	"github.com/blazejsewera/go-test-proxy/test/assert"
 )
 
 func TestCurlRequestMonitor(t *testing.T) {

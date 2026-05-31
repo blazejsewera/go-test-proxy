@@ -2,10 +2,11 @@ package proxy
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/blazejsewera/go-test-proxy/monitor"
 	"github.com/blazejsewera/go-test-proxy/proxy/internal"
 	"github.com/blazejsewera/go-test-proxy/proxy/internal/interceptor"
-	"net/http"
 )
 
 type Builder struct {

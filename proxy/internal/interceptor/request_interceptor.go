@@ -3,11 +3,12 @@ package interceptor
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/monitor"
 	"github.com/blazejsewera/go-test-proxy/proxy/internal/header"
-	"io"
-	"net/http"
 )
 
 type Request struct {

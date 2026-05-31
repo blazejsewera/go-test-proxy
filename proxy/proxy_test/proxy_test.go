@@ -1,6 +1,11 @@
 package proxy_test
 
 import (
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/proxy"
 	"github.com/blazejsewera/go-test-proxy/proxy/internal/header"
@@ -8,10 +13,6 @@ import (
 	"github.com/blazejsewera/go-test-proxy/test/must"
 	"github.com/blazejsewera/go-test-proxy/test/testrequest"
 	"github.com/blazejsewera/go-test-proxy/test/testresponse"
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func TestProxy(t *testing.T) {

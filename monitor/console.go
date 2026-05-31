@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"fmt"
+
 	"github.com/blazejsewera/go-test-proxy/event"
 )
 

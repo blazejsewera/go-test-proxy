@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
-	"github.com/blazejsewera/go-test-proxy/monitor"
-	"github.com/blazejsewera/go-test-proxy/proxy"
 	"log"
 	"net/http"
+
+	"github.com/blazejsewera/go-test-proxy/monitor"
+	"github.com/blazejsewera/go-test-proxy/proxy"
 )
 
 func main() {
@@ -33,6 +34,7 @@ func parseConfig() Configuration {
 
 	target := flag.String("target", "", "the target host address, for example, https://example.com")
 	port := flag.Int("port", 8000, "the port on which the proxy server will be running")
+	color := flag.Bool("color", false, "use terminal color, requires the terminal emulator to support ANSI color")
 	flag.Parse()
 
 	if *target == "" {
@@ -46,6 +48,8 @@ func parseConfig() Configuration {
 
 	portUint16 := uint16(*port)
 	config.Port = portUint16
+
+	config.Color = *color
 
 	return config
 }
@@ -83,4 +87,5 @@ type Configuration struct {
 	Application string `json:"application"`
 	Port        uint16 `json:"port"`
 	Target      string `json:"target"`
+	Color       bool   `json:"color"`
 }

@@ -2,10 +2,11 @@ package monitor_test
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/monitor"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
-	"testing"
 )
 
 func TestCombine(t *testing.T) {

@@ -2,10 +2,11 @@ package monitor
 
 import (
 	"fmt"
-	"github.com/blazejsewera/go-test-proxy/event"
 	"io"
 	"os"
 	"strconv"
+
+	"github.com/blazejsewera/go-test-proxy/event"
 )
 
 type curlRequest struct {

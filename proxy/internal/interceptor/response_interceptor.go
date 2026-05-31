@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
-	"github.com/blazejsewera/go-test-proxy/event"
-	"github.com/blazejsewera/go-test-proxy/monitor"
-	"github.com/blazejsewera/go-test-proxy/proxy/internal/header"
 	"io"
 	"net/http"
 	"slices"
+
+	"github.com/blazejsewera/go-test-proxy/event"
+	"github.com/blazejsewera/go-test-proxy/monitor"
+	"github.com/blazejsewera/go-test-proxy/proxy/internal/header"
 )
 
 type ResponseInterceptor struct {
