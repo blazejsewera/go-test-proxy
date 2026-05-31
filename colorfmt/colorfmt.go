@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/blazejsewera/go-test-proxy/colorfmt/color"
+	"github.com/blazejsewera/go-test-proxy/ext/color"
 )
 
 const escape = color.Escape
