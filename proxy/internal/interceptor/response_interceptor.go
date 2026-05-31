@@ -9,8 +9,10 @@ import (
 	"slices"
 
 	"github.com/blazejsewera/go-test-proxy/event"
+	"github.com/blazejsewera/go-test-proxy/ext/brotli"
 	"github.com/blazejsewera/go-test-proxy/monitor"
 	"github.com/blazejsewera/go-test-proxy/proxy/internal/header"
+	"github.com/blazejsewera/go-test-proxy/test/must"
 )
 
 type ResponseInterceptor struct {
@@ -66,30 +68,53 @@ func (i *ResponseInterceptor) responseHTTPEvent() event.HTTP {
 }
 
 func (i *ResponseInterceptor) bodyBufferToString(header map[string][]string) string {
-	if gzipped(header) {
+	compressionT := compression(header)
+	switch compressionT {
+	case gzipCompression:
 		compressed := bytes.NewBuffer(i.bodyBuffer.Bytes())
-		return i.gunzip(compressed)
-	} else {
+		return i.decompressGzip(compressed)
+	case brotliCompression:
+		compressed := bytes.NewBuffer(i.bodyBuffer.Bytes())
+		return i.decompressBrotli(compressed)
+	case noCompression:
+		fallthrough
+	default:
 		return i.bodyBuffer.String()
 	}
 }
 
-func gzipped(header map[string][]string) bool {
-	result := false
+type compressionType int
+
+const (
+	noCompression compressionType = iota
+	gzipCompression
+	brotliCompression
+)
+
+func compression(header http.Header) compressionType {
 	values, ok := header["Content-Encoding"]
-	if ok {
-		result = slices.Contains(values, "gzip")
+	if !ok {
+		return noCompression
 	}
-	return result
+
+	if slices.Contains(values, "gzip") {
+		return gzipCompression
+	}
+	if slices.Contains(values, "br") {
+		return brotliCompression
+	}
+
+	return noCompression
 }
 
-func (i *ResponseInterceptor) gunzip(compressed *bytes.Buffer) string {
+func (i *ResponseInterceptor) decompressGzip(compressed *bytes.Buffer) string {
 	decompressed := &bytes.Buffer{}
 	gzipReader, err := gzip.NewReader(compressed)
 	if err != nil {
 		i.monitor.Err(err)
 		return ""
 	}
+	defer must.Close(gzipReader)
 
 	_, err = io.Copy(decompressed, gzipReader)
 	if err != nil {
@@ -97,7 +122,15 @@ func (i *ResponseInterceptor) gunzip(compressed *bytes.Buffer) string {
 		return ""
 	}
 
-	err = gzipReader.Close()
+	return decompressed.String()
+}
+
+func (i *ResponseInterceptor) decompressBrotli(compressed *bytes.Buffer) string {
+	decompressed := &bytes.Buffer{}
+	brotliReader := brotli.NewReader(compressed)
+	defer must.Close(brotliReader)
+
+	_, err := io.Copy(decompressed, brotliReader)
 	if err != nil {
 		i.monitor.Err(err)
 		return ""

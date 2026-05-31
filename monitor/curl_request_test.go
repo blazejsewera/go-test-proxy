@@ -1,11 +1,12 @@
 package monitor_test
 
 import (
+	"bytes"
 	"net/http"
 	"regexp"
-	"strings"
 	"testing"
 
+	"github.com/blazejsewera/go-test-proxy/colorfmt"
 	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/monitor"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
@@ -33,24 +34,29 @@ func TestCurlRequestMonitor(t *testing.T) {
 			      -d "{\"bodyKey\":\"bodyValue\"}"
     		      http://example.com/path?queryKey=queryValue`)
 
-		buffer := &strings.Builder{}
-		tested := monitor.NewCurlRequestMonitorW(target, buffer)
+		stdout := new(bytes.Buffer)
+		stderr := new(bytes.Buffer)
+		cfmt := colorfmt.New(false, stdout, stderr)
+		tested := monitor.NewCurlRequestMonitor(target, cfmt)
 
 		tested.HTTPEvent(httpEvent)
 
-		assert.Equal(t, expected, buffer.String())
+		assert.Equal(t, expected, stdout.String())
 	})
 
 	t.Run("discards response HTTPEvent", func(t *testing.T) {
 		target := ""
 		httpEvent := event.HTTP{EventType: event.ResponseEventType}
 
-		buffer := &strings.Builder{}
-		tested := monitor.NewCurlRequestMonitorW(target, buffer)
+		stdout := new(bytes.Buffer)
+		stderr := new(bytes.Buffer)
+		cfmt := colorfmt.New(false, stdout, stderr)
+		tested := monitor.NewCurlRequestMonitor(target, cfmt)
 
 		tested.HTTPEvent(httpEvent)
 
-		assert.Equal(t, "", buffer.String())
+		assert.Empty(t, stdout.Bytes())
+		assert.Empty(t, stderr.Bytes())
 	})
 }
 

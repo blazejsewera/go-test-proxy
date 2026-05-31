@@ -6,7 +6,9 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 
+	"github.com/blazejsewera/go-test-proxy/colorfmt"
 	"github.com/blazejsewera/go-test-proxy/monitor"
 	"github.com/blazejsewera/go-test-proxy/proxy"
 )
@@ -14,9 +16,10 @@ import (
 func main() {
 	config := parseConfig()
 
-	consoleMonitor := monitor.NewConsoleMonitor(config.Target)
-	curlRequestMonitor := monitor.NewCurlRequestMonitor(config.Target)
-	stderrMonitor := monitor.NewStdErrMonitor()
+	cfmt := colorfmt.New(config.Color, os.Stdout, os.Stderr)
+	consoleMonitor := monitor.NewConsoleMonitor(config.Target, cfmt)
+	curlRequestMonitor := monitor.NewCurlRequestMonitor(config.Target, cfmt)
+	stderrMonitor := monitor.NewStdErrMonitor(cfmt)
 
 	server := proxy.NewBuilder().
 		WithProxyTarget(config.Target).

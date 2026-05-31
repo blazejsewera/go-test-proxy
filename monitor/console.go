@@ -3,18 +3,21 @@ package monitor
 import (
 	"fmt"
 
+	"github.com/blazejsewera/go-test-proxy/colorfmt"
 	"github.com/blazejsewera/go-test-proxy/event"
 )
 
 type console struct {
 	target string
+	cfmt   *colorfmt.Fmt
 }
 
 var _ Monitor = (*console)(nil)
 
-func NewConsoleMonitor(target string) Monitor {
+func NewConsoleMonitor(target string, cfmt *colorfmt.Fmt) Monitor {
 	return &console{
 		target: target,
+		cfmt:   cfmt,
 	}
 }
 
@@ -27,42 +30,42 @@ func (c *console) HTTPEvent(e event.HTTP) {
 }
 
 func (c *console) printRequest(e event.HTTP) {
-	fmt.Print("\n===== REQUEST =====\n")
+	c.cfmt.Cprint(colorfmt.Normal, colorfmt.Base, "\n===== REQUEST =====\n")
 	query := ""
 	if e.Query != "" {
 		query = fmt.Sprintf("?%s", e.Query)
 	}
-	fmt.Printf("%s %s%s\n", e.Method, e.Path, query)
-	fmt.Printf("Target-Host: %s\n", c.target)
-	fmt.Print("--HEADER--\n")
-	printHeader(e.Header)
-	fmt.Print("--BODY--\n")
-	printBody(e.Body)
-	fmt.Print("===================\n")
+	c.cfmt.Cprintf(colorfmt.Normal, colorfmt.Base, "%s %s%s\n", e.Method, e.Path, query)
+	c.cfmt.Cprintf(colorfmt.Normal, colorfmt.Base, "Target-Host: %s\n", c.target)
+	c.cfmt.Cprint(colorfmt.Normal, colorfmt.Base, "--HEADER--\n")
+	c.printHeader(e.Header)
+	c.cfmt.Cprint(colorfmt.Normal, colorfmt.Base, "--BODY--\n")
+	c.printBody(e.Body)
+	c.cfmt.Cprint(colorfmt.Normal, colorfmt.Base, "===================\n")
 }
 
 func (c *console) printResponse(e event.HTTP) {
-	fmt.Print("\n===== RESPONSE =====\n")
-	fmt.Printf("STATUS: %d\n", e.Status)
-	fmt.Print("--HEADER--\n")
-	printHeader(e.Header)
-	fmt.Print("--BODY--\n")
-	printBody(e.Body)
-	fmt.Print("====================\n")
+	c.cfmt.Cprint(colorfmt.Normal, colorfmt.Base, "\n===== RESPONSE =====\n")
+	c.cfmt.Cprintf(colorfmt.Normal, colorfmt.Base, "STATUS: %d\n", e.Status)
+	c.cfmt.Cprint(colorfmt.Normal, colorfmt.Base, "--HEADER--\n")
+	c.printHeader(e.Header)
+	c.cfmt.Cprint(colorfmt.Normal, colorfmt.Base, "--BODY--\n")
+	c.printBody(e.Body)
+	c.cfmt.Cprint(colorfmt.Normal, colorfmt.Base, "====================\n")
 }
 
-func printBody(body string) {
+func (c *console) printBody(body string) {
 	if body == "" {
-		fmt.Println("<empty>")
+		c.cfmt.Cprint(colorfmt.Normal, colorfmt.Base, "<empty>\n")
 	} else {
-		fmt.Println(body)
+		c.cfmt.Cprint(colorfmt.Normal, colorfmt.Base, body+"\n")
 	}
 }
 
-func printHeader(h map[string][]string) {
+func (c *console) printHeader(h map[string][]string) {
 	for key, values := range h {
 		for _, value := range values {
-			fmt.Printf("%s: %s\n", key, value)
+			c.cfmt.Cprintf(colorfmt.Normal, colorfmt.Base, "%s: %s\n", key, value)
 		}
 	}
 }

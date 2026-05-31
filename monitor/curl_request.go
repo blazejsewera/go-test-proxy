@@ -3,23 +3,20 @@ package monitor
 import (
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 
+	"github.com/blazejsewera/go-test-proxy/colorfmt"
 	"github.com/blazejsewera/go-test-proxy/event"
 )
 
 type curlRequest struct {
 	target string
 	output io.Writer
+	cfmt   *colorfmt.Fmt
 }
 
-func NewCurlRequestMonitor(target string) Monitor {
-	return NewCurlRequestMonitorW(target, os.Stdout)
-}
-
-func NewCurlRequestMonitorW(target string, output io.Writer) Monitor {
-	return &curlRequest{target: target, output: output}
+func NewCurlRequestMonitor(target string, cfmt *colorfmt.Fmt) Monitor {
+	return &curlRequest{target: target, cfmt: cfmt}
 }
 
 func (c *curlRequest) HTTPEvent(e event.HTTP) {
@@ -34,16 +31,11 @@ func (c *curlRequest) HTTPEvent(e event.HTTP) {
 }
 
 func (c *curlRequest) writeCurlRequest(e event.HTTP) {
-	result := fmt.Sprintf("curl -X %s%s%s %s\n",
+	c.cfmt.Cprintf(colorfmt.Normal, colorfmt.Blue, "curl -X %s%s%s %s\n",
 		e.Method,
 		headerToCurl(e.Header),
 		bodyToCurl(e.Body),
 		urlPartsToCurl(c.target, e.Path, e.Query))
-	_, err := c.output.Write([]byte(result))
-	if err != nil {
-		c.Err(err)
-		return
-	}
 }
 
 func headerToCurl(header map[string][]string) string {

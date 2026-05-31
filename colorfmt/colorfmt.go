@@ -29,14 +29,14 @@ const (
 	BrightWhite
 )
 
-type ColorFmt struct {
+type Fmt struct {
 	colorEnabled bool
 	stdout       io.Writer
 	stderr       io.Writer
 }
 
-func New(colorEnabled bool, stdout io.Writer, stderr io.Writer) *ColorFmt {
-	c := &ColorFmt{colorEnabled, stdout, stderr}
+func New(colorEnabled bool, stdout io.Writer, stderr io.Writer) *Fmt {
+	c := &Fmt{colorEnabled, stdout, stderr}
 	if c.colorEnabled {
 		_, err1 := fmt.Fprint(c.stdout, beginFormatting(Normal, Base))
 		_, err2 := fmt.Fprint(c.stderr, beginFormatting(Normal, Base))
@@ -47,21 +47,21 @@ func New(colorEnabled bool, stdout io.Writer, stderr io.Writer) *ColorFmt {
 	return c
 }
 
-func (c *ColorFmt) Cprint(style Style, color Color, s string) {
+func (c *Fmt) Cprint(style Style, color Color, s string) {
 	c.styledPrint(style, color, s)
 }
 
-func (c *ColorFmt) Cprintf(style Style, color Color, format string, v ...any) {
+func (c *Fmt) Cprintf(style Style, color Color, format string, v ...any) {
 	formatted := fmt.Sprintf(format, v...)
 	c.styledPrint(style, color, formatted)
 }
 
-func (c *ColorFmt) Cerrprintf(style Style, color Color, format string, v ...any) {
+func (c *Fmt) Cerrprintf(style Style, color Color, format string, v ...any) {
 	formatted := fmt.Sprintf(format, v...)
 	c.styledStdErrPrint(style, color, formatted)
 }
 
-func (c *ColorFmt) styledPrint(style Style, color Color, s string) {
+func (c *Fmt) styledPrint(style Style, color Color, s string) {
 	if !c.colorEnabled {
 		_, err := fmt.Fprint(c.stdout, s)
 		if err != nil {
@@ -76,7 +76,7 @@ func (c *ColorFmt) styledPrint(style Style, color Color, s string) {
 	}
 }
 
-func (c *ColorFmt) styledStdErrPrint(style Style, color Color, s string) {
+func (c *Fmt) styledStdErrPrint(style Style, color Color, s string) {
 	if !c.colorEnabled {
 		_, err := fmt.Fprint(c.stderr, s)
 		if err != nil {
