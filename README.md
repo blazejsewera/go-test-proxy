@@ -25,7 +25,7 @@ go build github.com/blazejsewera/go-test-proxy/cmd/gotestproxy
 ### Run
 
 ```sh
-./gotestproxy --target=https://example.com --port=8000
+./gotestproxy -target=https://example.com -port=8000 -color
 ```
 
 ### Point your client to the proxy

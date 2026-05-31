@@ -31,7 +31,7 @@ func (c *curlRequest) HTTPEvent(e event.HTTP) {
 }
 
 func (c *curlRequest) writeCurlRequest(e event.HTTP) {
-	c.cfmt.Cprintf(colorfmt.Normal, colorfmt.Blue, "curl -X %s%s%s %s\n",
+	c.cfmt.Cprintf(colorfmt.Faint, colorfmt.Green, "curl -X %s%s%s %s\n",
 		e.Method,
 		headerToCurl(e.Header),
 		bodyToCurl(e.Body),

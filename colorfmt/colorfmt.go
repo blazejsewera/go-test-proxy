@@ -18,6 +18,7 @@ const (
 	Bold
 	Italic
 	Underline
+	Faint
 )
 
 const (
@@ -26,6 +27,9 @@ const (
 	Green
 	Yellow
 	Blue
+	BrightRed
+	BrightGreen
+	BrightBlue
 	BrightWhite
 )
 
@@ -111,6 +115,8 @@ func mapStyle(s Style) color.StyleAttribute {
 		return color.Italic
 	case Underline:
 		return color.Underline
+	case Faint:
+		return color.Faint
 	default:
 		return color.Reset
 	}
@@ -128,6 +134,12 @@ func mapColor(c Color) color.ColorAttribute {
 		return color.FgYellow
 	case Blue:
 		return color.FgBlue
+	case BrightRed:
+		return color.FgHiRed
+	case BrightGreen:
+		return color.FgHiGreen
+	case BrightBlue:
+		return color.FgHiBlue
 	case BrightWhite:
 		return color.FgHiWhite
 	default:
