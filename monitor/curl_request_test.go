@@ -20,6 +20,7 @@ func TestCurlRequestMonitor(t *testing.T) {
 			Header: map[string][]string{
 				"Accept":       {"application/json"},
 				"Content-Type": {"application/json"},
+				"Other-Header": {`"quoted", "values"`},
 			},
 			Body:   `{"bodyKey":"bodyValue"}`,
 			Method: http.MethodPost,
@@ -31,6 +32,7 @@ func TestCurlRequestMonitor(t *testing.T) {
 			`curl -X POST
 			      -H "Accept: application/json"
 			      -H "Content-Type: application/json"
+				  -H "Other-Header: \"quoted\", \"values\""
 			      -d "{\"bodyKey\":\"bodyValue\"}"
     		      http://example.com/path?queryKey=queryValue`)
 
