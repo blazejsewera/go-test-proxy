@@ -3,7 +3,6 @@ package monitor
 import (
 	"fmt"
 	"io"
-	"strconv"
 
 	"github.com/blazejsewera/go-test-proxy/colorfmt"
 	"github.com/blazejsewera/go-test-proxy/event"
@@ -42,7 +41,8 @@ func headerToCurl(header map[string][]string) string {
 	result := ""
 	for key, values := range header {
 		for _, value := range values {
-			result += fmt.Sprintf(" -H \"%s: %s\"", key, value)
+			formattedHeader := fmt.Sprintf("%s: %s", key, value)
+            result += fmt.Sprintf(" -H %q", formattedHeader)
 		}
 	}
 	return result
@@ -52,7 +52,7 @@ func bodyToCurl(body string) string {
 	if body == "" {
 		return ""
 	}
-	return fmt.Sprintf(" -d %s", strconv.Quote(body))
+	return fmt.Sprintf(" -d %q", body)
 }
 
 func urlPartsToCurl(host string, path string, query string) string {
