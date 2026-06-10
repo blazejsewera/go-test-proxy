@@ -2,26 +2,25 @@
 
 MOD = github.com/blazejsewera/go-test-proxy
 BIN = gotestproxy
-TO_BUILD = "$(MOD)/cmd/$(BIN)"
 
 PREFIX ?= /usr/local/bin
 
 all: build test
 
 build:
-	go build $(TO_BUILD)
+	go build -o $(BIN) $(MOD)
 
 build-windows-amd64:
-	GOOS=windows GOARCH=amd64 go build $(TO_BUILD)
+	GOOS=windows GOARCH=amd64 go build -o $(BIN).exe $(MOD)
 
 build-linux-amd64:
-	GOOS=linux GOARCH=amd64 go build $(TO_BUILD)
+	GOOS=linux GOARCH=amd64 go build -o $(BIN) $(MOD)
 
 build-macos-amd64:
-	GOOS=darwin GOARCH=amd64 go build $(TO_BUILD)
+	GOOS=darwin GOARCH=amd64 go build -o $(BIN) $(MOD)
 
 build-macos-arm64:
-	GOOS=darwin GOARCH=arm64 go build $(TO_BUILD)
+	GOOS=darwin GOARCH=arm64 go build -o $(BIN) $(MOD)
 
 install: all
 	install -m755 "$(BIN)" "$(PREFIX)"

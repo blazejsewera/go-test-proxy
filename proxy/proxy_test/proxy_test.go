@@ -119,7 +119,7 @@ func TestProxy(t *testing.T) {
 		tested := buildTestServer(proxy.NewBuilder().
 			WithMock(customPath, customHandler).
 			WithMockGroup("testGroup", proxy.Mock{RoutePattern: customPathForMockGroup, HandlerFunc: customHandlerForMockGroup}).
-			WithEnabledMockGroups("testGroup").
+			WithEnabledMockGroups([]string{"testGroup"}).
 			WithProxyTarget(backendURL).
 			WithMonitor(monitorSpy))
 		tested.Start()
