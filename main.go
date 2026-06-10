@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
 	"github.com/blazejsewera/go-test-proxy/colorfmt/log"
@@ -49,19 +48,5 @@ func shutdownServer(server *http.Server) {
 	err := server.Shutdown(context.Background())
 	if err != nil {
 		log.Fatalln(err)
-	}
-}
-
-func configInfoHandler(cfg config.Configuration) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		bodyBytes, err := json.Marshal(cfg)
-		if err != nil {
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, err = w.Write(bodyBytes)
-		if err != nil {
-			return
-		}
 	}
 }
