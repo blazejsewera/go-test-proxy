@@ -19,13 +19,19 @@ make build
 or if you don't have Make:
 
 ```sh
-go build github.com/blazejsewera/go-test-proxy/cmd/gotestproxy
+go build -o gotestproxy github.com/blazejsewera/go-test-proxy
 ```
 
 ### Run
 
 ```sh
 ./gotestproxy -target=https://example.com -port=8000 -color
+```
+
+To print help:
+
+```sh
+./gotestproxy -h
 ```
 
 ### Point your client to the proxy
