@@ -96,7 +96,7 @@ func TestProxy(t *testing.T) {
 		})
 	})
 
-	t.Run("proxy with a custom handler", func(t *testing.T) {
+	t.Run("proxy with a custom mock and a custom mock group", func(t *testing.T) {
 		backendURL, closeBackend := PathEchoServer()
 		defer closeBackend()
 
@@ -108,8 +108,18 @@ func TestProxy(t *testing.T) {
 			must.Succeed(w.Write([]byte(customResponseBody)))
 		}
 
+		customPathForMockGroup := "/customPathForMockGroup"
+		customResponseBodyForMockGroup := "customResponseBodyForMockGroup"
+		customResponseHeaderForMockGroup := http.Header{"X-Custom-Header": []string{"Custom-Value-For-Mock-Group"}}
+		customHandlerForMockGroup := func(w http.ResponseWriter, r *http.Request) {
+			header.Copy(w.Header(), customResponseHeaderForMockGroup)
+			must.Succeed(w.Write([]byte(customResponseBodyForMockGroup)))
+		}
+
 		tested := buildTestServer(proxy.NewBuilder().
-			WithHandlerFunc(customPath, customHandler).
+			WithMock(customPath, customHandler).
+			WithMockGroup("testGroup", proxy.Mock{RoutePattern: customPathForMockGroup, HandlerFunc: customHandlerForMockGroup}).
+			WithEnabledMockGroups("testGroup").
 			WithProxyTarget(backendURL).
 			WithMonitor(monitorSpy))
 		tested.Start()
@@ -124,6 +134,15 @@ func TestProxy(t *testing.T) {
 			body := readBody(response.Body)
 			assert.Equal(t, customResponseBody, body)
 			assert.HeaderContainsExpected(t, customResponseHeader, response.Header)
+		})
+
+		t.Run("does not forward a request for a custom path for mock group and uses a custom handler instead", func(t *testing.T) {
+			response := must.Succeed(client.Do(testrequest.New(tested.URL, customPathForMockGroup)))
+
+			assert.Equal(t, http.StatusOK, response.StatusCode)
+			body := readBody(response.Body)
+			assert.Equal(t, customResponseBodyForMockGroup, body)
+			assert.HeaderContainsExpected(t, customResponseHeaderForMockGroup, response.Header)
 		})
 
 		t.Run("forwards a request with headers to the underlying backend server for a different path", func(t *testing.T) {
@@ -158,6 +177,38 @@ func TestProxy(t *testing.T) {
 
 			assert.HTTPEventListEqual(t, expected, monitorSpy.Events)
 			assert.Empty(t, monitorSpy.Errors)
+		})
+	})
+
+	t.Run("proxy with a custom mock group and enabled all mock groups", func(t *testing.T) {
+		backendURL, closeBackend := PathEchoServer()
+		defer closeBackend()
+
+		customPathForMockGroup := "/customPathForMockGroup"
+		customResponseBodyForMockGroup := "customResponseBodyForMockGroup"
+		customResponseHeaderForMockGroup := http.Header{"X-Custom-Header": []string{"Custom-Value-For-Mock-Group"}}
+		customHandlerForMockGroup := func(w http.ResponseWriter, r *http.Request) {
+			header.Copy(w.Header(), customResponseHeaderForMockGroup)
+			must.Succeed(w.Write([]byte(customResponseBodyForMockGroup)))
+		}
+
+		tested := buildTestServer(proxy.NewBuilder().
+			WithMockGroup("testGroup", proxy.Mock{RoutePattern: customPathForMockGroup, HandlerFunc: customHandlerForMockGroup}).
+			WithEnabledAllMocks().
+			WithProxyTarget(backendURL).
+			WithMonitor(monitorSpy))
+		tested.Start()
+		defer tested.Close()
+
+		client := tested.Client()
+
+		t.Run("does not forward a request for a custom path for mock group and uses a custom handler instead", func(t *testing.T) {
+			response := must.Succeed(client.Do(testrequest.New(tested.URL, customPathForMockGroup)))
+
+			assert.Equal(t, http.StatusOK, response.StatusCode)
+			body := readBody(response.Body)
+			assert.Equal(t, customResponseBodyForMockGroup, body)
+			assert.HeaderContainsExpected(t, customResponseHeaderForMockGroup, response.Header)
 		})
 	})
 

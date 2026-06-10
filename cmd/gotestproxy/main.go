@@ -4,19 +4,21 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
-	"log"
 	"net/http"
 	"os"
 
 	"github.com/blazejsewera/go-test-proxy/colorfmt"
+	"github.com/blazejsewera/go-test-proxy/colorfmt/log"
 	"github.com/blazejsewera/go-test-proxy/monitor"
 	"github.com/blazejsewera/go-test-proxy/proxy"
 )
 
 func main() {
 	config := parseConfig()
-
 	cfmt := colorfmt.New(config.Color, os.Stdout, os.Stderr)
+	log.SetFmt(cfmt)
+	validateConfig(config)
+
 	consoleMonitor := monitor.NewConsoleMonitor(config.Target, cfmt)
 	curlRequestMonitor := monitor.NewCurlRequestMonitor(config.Target, cfmt)
 	stderrMonitor := monitor.NewStdErrMonitor(cfmt)
@@ -24,7 +26,7 @@ func main() {
 	server := proxy.NewBuilder().
 		WithProxyTarget(config.Target).
 		WithPort(config.Port).
-		WithHandlerFunc("/_config", configInfoHandler(config)).
+		WithMock("/_config", configInfoHandler(config)).
 		WithMonitor(monitor.Combine(consoleMonitor, curlRequestMonitor, stderrMonitor)).
 		Build()
 
@@ -40,13 +42,6 @@ func parseConfig() Configuration {
 	color := flag.Bool("color", false, "use terminal color, requires the terminal emulator to support ANSI color")
 	flag.Parse()
 
-	if *target == "" {
-		log.Fatalln("[FATAL] The target cannot be empty. " +
-			"Specify the target server, e.g., https://example.com\n" +
-			"Try: ./gotestproxy --target=https://example.com\n" +
-			"Run with -h for help.")
-	}
-
 	config.Target = *target
 
 	portUint16 := uint16(*port)
@@ -55,6 +50,15 @@ func parseConfig() Configuration {
 	config.Color = *color
 
 	return config
+}
+
+func validateConfig(config Configuration) {
+	if config.Target == "" {
+		log.Fatalln("[FATAL] The target cannot be empty. " +
+			"Specify the target server, e.g., https://example.com\n" +
+			"Try: ./gotestproxy --target=https://example.com\n" +
+			"Run with -h for help.")
+	}
 }
 
 func listenAndServe(server *http.Server, config Configuration) {

@@ -16,7 +16,7 @@ type Request struct {
 	monitor monitor.Monitor
 }
 
-func ForRequest(r *http.Request, monitor monitor.Monitor) *Request {
+func NewRequestMonitor(r *http.Request, monitor monitor.Monitor) *Request {
 	return &Request{r, monitor}
 }
 

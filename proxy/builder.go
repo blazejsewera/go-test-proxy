@@ -9,17 +9,24 @@ import (
 	"github.com/blazejsewera/go-test-proxy/proxy/internal/interceptor"
 )
 
+type Mock struct {
+	RoutePattern string
+	HandlerFunc  http.HandlerFunc
+}
+
 type Builder struct {
-	Router  *http.ServeMux
-	Monitor monitor.Monitor
-	port    uint16
+	Router     *http.ServeMux
+	Monitor    monitor.Monitor
+	port       uint16
+	mockGroups map[string][]Mock
 }
 
 func NewBuilder() *Builder {
 	return &Builder{
-		port:    8000,
-		Monitor: monitor.NopMonitor{},
-		Router:  http.NewServeMux(),
+		Router:     http.NewServeMux(),
+		Monitor:    monitor.NopMonitor{},
+		port:       8000,
+		mockGroups: make(map[string][]Mock),
 	}
 }
 
@@ -34,13 +41,23 @@ func (b *Builder) WithMonitor(monitor monitor.Monitor) *Builder {
 }
 
 func (b *Builder) WithProxyTarget(url string) *Builder {
-	return b.WithHandlerFunc("/", internal.ProxyHandler(b.Monitor, url))
+	wrapperFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reqMonitor := interceptor.NewRequestMonitor(r, b.Monitor)
+		reqMonitor.MonitorRequest()
+
+		resInterceptor := interceptor.NewResponseInterceptor(w, b.Monitor)
+		internal.ProxyHandler(b.Monitor, url)(resInterceptor, r)
+		resInterceptor.MonitorAndForwardResponse()
+	})
+
+	b.Router.Handle("/", wrapperFunc)
+	return b
 }
 
-func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.ResponseWriter, r *http.Request)) *Builder {
+func (b *Builder) WithMock(pattern string, handlerFunc http.HandlerFunc) *Builder {
 	wrapperFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		reqInterceptor := interceptor.ForRequest(r, b.Monitor)
-		reqInterceptor.MonitorRequest()
+		reqMonitor := interceptor.NewRequestMonitor(r, b.Monitor)
+		reqMonitor.MonitorRequest()
 
 		resInterceptor := interceptor.NewResponseInterceptor(w, b.Monitor)
 		handlerFunc(resInterceptor, r)
@@ -48,6 +65,52 @@ func (b *Builder) WithHandlerFunc(pattern string, handlerFunc func(w http.Respon
 	})
 
 	b.Router.Handle(pattern, wrapperFunc)
+	return b
+}
+
+func (b *Builder) WithMockGroup(name string, mocks ...Mock) *Builder {
+	b.mockGroups[name] = append(b.mockGroups[name], mocks...)
+	return b
+}
+
+func (b *Builder) WithEnabledMockGroups(groupNames ...string) *Builder {
+	for _, enabledGroup := range groupNames {
+		group, ok := b.mockGroups[enabledGroup]
+		if !ok {
+			continue
+		}
+		for _, mock := range group {
+			wrapperFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				reqMonitor := interceptor.NewRequestMonitor(r, b.Monitor)
+				reqMonitor.MonitorRequest()
+
+				resInterceptor := interceptor.NewResponseInterceptor(w, b.Monitor)
+				mock.HandlerFunc(resInterceptor, r)
+				resInterceptor.MonitorAndForwardResponse()
+			})
+
+			b.Router.Handle(mock.RoutePattern, wrapperFunc)
+		}
+	}
+
+	return b
+}
+
+func (b *Builder) WithEnabledAllMocks() *Builder {
+	for _, mockGroup := range b.mockGroups {
+		for _, mock := range mockGroup {
+			wrapperFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				reqMonitor := interceptor.NewRequestMonitor(r, b.Monitor)
+				reqMonitor.MonitorRequest()
+
+				resInterceptor := interceptor.NewResponseInterceptor(w, b.Monitor)
+				mock.HandlerFunc(resInterceptor, r)
+				resInterceptor.MonitorAndForwardResponse()
+			})
+
+			b.Router.Handle(mock.RoutePattern, wrapperFunc)
+		}
+	}
 	return b
 }
 
