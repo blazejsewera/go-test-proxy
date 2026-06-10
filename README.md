@@ -41,8 +41,52 @@ backendUrl: "http://localhost:8000"
 It is easy to quickly mock endpoints with Go Test Proxy,
 simply add a new handler function to the proxy builder.
 
-Go to [main.go](cmd/gotestproxy/main.go) and invoke `builder.WithHandlerFunc("/mockedPath", customFunc)`.
-Then rebuild the project and run it.
+Go to [main.go](main.go) and add a mock that intercepts traffic on that path
+regardless of enabled mock groups:
+
+```go
+package main
+
+func main() {
+	proxy.NewBuilder().
+		// ...
+		WithMock("/mockedPath", customHandlerFunc).
+		// ...
+		Build()
+}
+```
+
+Or better yet, add a mock group:
+
+```go
+package main
+
+func main() {
+	proxy.NewBuilder().
+		// ...
+		WithMockGroup("group1",
+			proxy.Mock{
+				RoutePattern: "/someRoute",
+				HandlerFunc:  someHandlerFunc,
+			},
+			proxy.Mock{
+				RoutePattern: "/someOtherRoute",
+				HandlerFunc:  someOtherHandlerFunc,
+			}).
+		WithMockGroup("group2",
+			proxy.Mock{
+				RoutePattern: "/anotherRoute",
+				HandlerFunc:  anotherHandlerFunc,
+			}).
+		// ...
+		Build()
+}
+```
+
+You can extract the `proxy.Mock` creation to a factory function being in another package, like `mock`.
+
+Then rebuild the project and run it with `-allMocks` arg to enable all mock groups,
+or `-mockGroups=group1,group2` arg to enable specified mock groups.
 
 ## Swapping the monitor implementations
 
