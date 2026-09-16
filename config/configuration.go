@@ -18,6 +18,7 @@ type Configuration struct {
 	Color          bool     `json:"color"`
 	MockGroups     []string `json:"mockGroups"`
 	EnableAllMocks bool     `json:"enableAllMocks"`
+	IPv6           bool     `json:"ipv6"`
 
 	Cfmt *colorfmt.Fmt `json:"-"`
 }
@@ -35,6 +36,7 @@ func parseConfig() Configuration {
 
 	target := flag.String("target", "", "the target host address, for example, https://example.com")
 	port := flag.Int("port", 8000, "the port on which the proxy server will be running")
+	ipv6 := flag.Bool("ipv6", false, "listen on IPv6 addresses")
 	color := flag.Bool("color", false, "use terminal color, requires the terminal emulator to support ANSI color")
 	mockGroups := flag.String("mockGroups", "", "comma separated list of mock groups to enable, for example, 'group1,group2'")
 	enableAllMocks := flag.Bool("allMocks", false, "enable all mocks; when enabled, mockGroups argument is ignored")
@@ -44,6 +46,7 @@ func parseConfig() Configuration {
 
 	portUint16 := uint16(*port)
 	config.Port = portUint16
+	config.IPv6 = *ipv6
 
 	config.Color = *color
 

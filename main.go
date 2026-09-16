@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"net"
 	"net/http"
 
 	"github.com/blazejsewera/go-test-proxy/colorfmt/log"
@@ -38,7 +40,17 @@ func main() {
 
 func listenAndServe(server *http.Server, cfg config.Configuration) {
 	log.Printf("starting proxy server for target: '%s', on port: %d", cfg.Target, cfg.Port)
-	err := server.ListenAndServe()
+	network := "tcp4"
+	if cfg.IPv6 {
+		log.Printf(", on IPv6")
+		network = "tcp6"
+	}
+	l, err := net.Listen(network, fmt.Sprintf(":%d", cfg.Port))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer l.Close()
+	err = server.Serve(l)
 	if err != nil {
 		log.Fatalln(err)
 	}
