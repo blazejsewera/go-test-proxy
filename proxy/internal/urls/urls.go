@@ -12,7 +12,7 @@ func ForwardedURL(rawTargetHost string, incomingURL *url.URL) *url.URL {
 		log.Fatalf("target host: url parse: %v\n", err)
 	}
 
-	targetURL.Path = incomingURL.Path
+	targetURL = targetURL.JoinPath(incomingURL.EscapedPath())
 	targetURL.RawPath = incomingURL.RawPath
 	targetURL.RawQuery = incomingURL.RawQuery
 	targetURL.Fragment = incomingURL.Fragment
