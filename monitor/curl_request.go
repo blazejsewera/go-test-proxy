@@ -20,6 +20,10 @@ func NewCurlRequestMonitor(target string, cfmt *colorfmt.Fmt) Monitor {
 	return &curlRequest{target: target, cfmt: cfmt}
 }
 
+func (c *curlRequest) Name() string {
+	return "curl"
+}
+
 func (c *curlRequest) HTTPEvent(e event.HTTP) {
 	switch e.EventType {
 	case event.RequestEventType:
@@ -32,7 +36,7 @@ func (c *curlRequest) HTTPEvent(e event.HTTP) {
 }
 
 func (c *curlRequest) writeCurlRequest(e event.HTTP) {
-	c.cfmt.Cprintf(colorfmt.Faint, colorfmt.Green, "curl -X %s%s%s %s\n",
+	c.cfmt.Cprintf(colorfmt.Faint, colorfmt.Green, "curl -X %s%s%s '%s'\n",
 		e.Method,
 		headerToCurl(e.Header),
 		bodyToCurl(e.Body),
@@ -69,7 +73,7 @@ func urlPartsToCurl(host string, path string, query string) string {
 	if query == "" {
 		return host + path
 	}
-	return fmt.Sprintf("'%s%s?%s'", host, path, query)
+	return fmt.Sprintf("%s%s?%s", host, path, query)
 }
 
 func (c *curlRequest) Err(error) {}

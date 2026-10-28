@@ -18,6 +18,7 @@ type Configuration struct {
 	Color          bool     `json:"color"`
 	MockGroups     []string `json:"mockGroups"`
 	EnableAllMocks bool     `json:"enableAllMocks"`
+	Monitors       []string `json:"monitors"`
 	IPv6           bool     `json:"ipv6"`
 
 	Cfmt *colorfmt.Fmt `json:"-"`
@@ -40,6 +41,7 @@ func parseConfig() Configuration {
 	color := flag.Bool("color", false, "use terminal color, requires the terminal emulator to support ANSI color")
 	mockGroups := flag.String("mockGroups", "", "comma separated list of mock groups to enable, for example, 'group1,group2'")
 	enableAllMocks := flag.Bool("allMocks", false, "enable all mocks; when enabled, mockGroups argument is ignored")
+	monitors := flag.String("monitors", "console,curl", "comma separated list of monitors to enable, for example, 'console,curl'")
 	flag.Parse()
 
 	config.Target = *target
@@ -50,13 +52,15 @@ func parseConfig() Configuration {
 
 	config.Color = *color
 
-	config.MockGroups = parseMockGroups(*mockGroups)
+	config.MockGroups = parseCommaSeparatedList(*mockGroups)
 	config.EnableAllMocks = *enableAllMocks
+
+	config.Monitors = parseCommaSeparatedList(*monitors)
 
 	return config
 }
 
-func parseMockGroups(mockGroups string) []string {
+func parseCommaSeparatedList(mockGroups string) []string {
 	if mockGroups == "" {
 		return []string{}
 	}

@@ -24,7 +24,7 @@ func main() {
 		WithProxyTarget(cfg.Target).
 		WithPort(cfg.Port).
 		WithMockGroup(mock.ConfigMockGroup, mock.ConfigInfo(cfg)).
-		WithMonitor(monitor.Combine(consoleMonitor, curlRequestMonitor, stderrMonitor))
+		WithMonitor(monitor.Combine(cfg, consoleMonitor, curlRequestMonitor, stderrMonitor))
 
 	if cfg.EnableAllMocks {
 		builder.WithEnabledAllMocks()
@@ -49,7 +49,14 @@ func listenAndServe(server *http.Server, cfg config.Configuration) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	defer l.Close()
+	defer func(l net.Listener) {
+		err := l.Close()
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}(l)
+
+	log.Printf("\n")
 	err = server.Serve(l)
 	if err != nil {
 		log.Fatalln(err)

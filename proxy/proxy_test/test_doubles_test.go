@@ -21,6 +21,10 @@ type MonitorSpy struct {
 	Errors []error
 }
 
+func (m *MonitorSpy) Name() string {
+	return ""
+}
+
 var _ monitor.Monitor = (*MonitorSpy)(nil)
 
 func (m *MonitorSpy) HTTPEvent(event event.HTTP) {

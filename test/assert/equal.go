@@ -13,6 +13,13 @@ func Equal[T comparable](t testing.TB, expected, actual T) {
 	}
 }
 
+func True(t testing.TB, actual bool) {
+	t.Helper()
+	if !actual {
+		t.Errorf("assert: expected true but got false")
+	}
+}
+
 // EqualQuoted is the same as Equal,
 // but quotes the expected and actual strings in the assertion error message
 func EqualQuoted(t testing.TB, expected, actual string) {

@@ -21,6 +21,10 @@ func NewConsoleMonitor(target string, cfmt *colorfmt.Fmt) Monitor {
 	}
 }
 
+func (c *console) Name() string {
+	return "console"
+}
+
 func (c *console) HTTPEvent(e event.HTTP) {
 	if e.EventType == event.RequestEventType {
 		c.printRequest(e)

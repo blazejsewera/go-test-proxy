@@ -13,6 +13,10 @@ func NewStdErrMonitor(cfmt *colorfmt.Fmt) Monitor {
 	return &stdErr{cfmt}
 }
 
+func (e *stdErr) Name() string {
+	return "" // always enabled
+}
+
 func (e *stdErr) Err(err error) {
 	e.cfmt.Cerrprintf(colorfmt.Normal, colorfmt.Red, "[PROXY ERROR]: %s\n", err)
 }
