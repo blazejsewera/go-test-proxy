@@ -41,7 +41,7 @@ func parseConfig() Configuration {
 	color := flag.Bool("color", false, "use terminal color, requires the terminal emulator to support ANSI color")
 	mockGroups := flag.String("mockGroups", "", "comma separated list of mock groups to enable, for example, 'group1,group2'")
 	enableAllMocks := flag.Bool("allMocks", false, "enable all mocks; when enabled, mockGroups argument is ignored")
-	monitors := flag.String("monitors", "console,curl", "comma separated list of monitors to enable, for example, 'console,curl'")
+	monitors := flag.String("monitors", "request,response,curl", "comma separated list of monitors to enable, for example, 'request,response'")
 	flag.Parse()
 
 	config.Target = *target

@@ -7,60 +7,79 @@ import (
 	"github.com/blazejsewera/go-test-proxy/event"
 )
 
-type console struct {
+type response struct {
 	target string
 	cfmt   *colorfmt.Fmt
 }
 
-var _ Monitor = (*console)(nil)
+var _ Monitor = (*response)(nil)
 
-func NewConsoleMonitor(target string, cfmt *colorfmt.Fmt) Monitor {
-	return &console{
+type request struct {
+	target string
+	cfmt   *colorfmt.Fmt
+}
+
+func (r *request) Name() string {
+	return "request"
+}
+
+func (r *request) HTTPEvent(e event.HTTP) {
+	if e.EventType == event.RequestEventType {
+		r.printRequest(e)
+	}
+}
+
+func (r *request) Err(error) {}
+
+func (r *request) printRequest(e event.HTTP) {
+	r.cfmt.Cprint(colorfmt.Faint, colorfmt.Base, "\n===== REQUEST =====\n")
+	query := ""
+	if e.Query != "" {
+		query = fmt.Sprintf("?%s", e.Query)
+	}
+	r.cfmt.Cprintf(colorfmt.Bold, colorfmt.BrightBlue, "%s ", e.Method)
+	r.cfmt.Cprintf(colorfmt.Underline, colorfmt.BrightBlue, "%s%s\n", e.Path, query)
+	r.cfmt.Cprintf(colorfmt.Italic, colorfmt.Blue, "Target-Host: %s\n", r.target)
+	r.cfmt.Cprint(colorfmt.Faint, colorfmt.Blue, "--HEADER--\n")
+	printHeader(r.cfmt, e.Header, colorfmt.Blue)
+	r.cfmt.Cprint(colorfmt.Faint, colorfmt.Blue, "--BODY--\n")
+	printBody(r.cfmt, e.Body, colorfmt.Blue)
+	r.cfmt.Cprint(colorfmt.Faint, colorfmt.Base, "===================\n")
+}
+
+func NewRequestMonitor(target string, cfmt *colorfmt.Fmt) Monitor {
+	return &request{target, cfmt}
+}
+
+func NewResponseMonitor(target string, cfmt *colorfmt.Fmt) Monitor {
+	return &response{
 		target: target,
 		cfmt:   cfmt,
 	}
 }
 
-func (c *console) Name() string {
-	return "console"
+func (c *response) Name() string {
+	return "response"
 }
 
-func (c *console) HTTPEvent(e event.HTTP) {
-	if e.EventType == event.RequestEventType {
-		c.printRequest(e)
-	} else if e.EventType == event.ResponseEventType {
+func (c *response) HTTPEvent(e event.HTTP) {
+	if e.EventType == event.ResponseEventType {
 		c.printResponse(e)
 	}
 }
 
-func (c *console) printRequest(e event.HTTP) {
-	c.cfmt.Cprint(colorfmt.Faint, colorfmt.Base, "\n===== REQUEST =====\n")
-	query := ""
-	if e.Query != "" {
-		query = fmt.Sprintf("?%s", e.Query)
-	}
-	c.cfmt.Cprintf(colorfmt.Bold, colorfmt.BrightBlue, "%s ", e.Method)
-	c.cfmt.Cprintf(colorfmt.Underline, colorfmt.BrightBlue, "%s%s\n", e.Path, query)
-	c.cfmt.Cprintf(colorfmt.Italic, colorfmt.Blue, "Target-Host: %s\n", c.target)
-	c.cfmt.Cprint(colorfmt.Faint, colorfmt.Blue, "--HEADER--\n")
-	c.printHeader(e.Header, colorfmt.Blue)
-	c.cfmt.Cprint(colorfmt.Faint, colorfmt.Blue, "--BODY--\n")
-	c.printBody(e.Body, colorfmt.Blue)
-	c.cfmt.Cprint(colorfmt.Faint, colorfmt.Base, "===================\n")
-}
-
-func (c *console) printResponse(e event.HTTP) {
+func (c *response) printResponse(e event.HTTP) {
 	c.cfmt.Cprint(colorfmt.Faint, colorfmt.Base, "\n===== RESPONSE =====\n")
-	c.printStatus(e.Status)
+	printStatus(c.cfmt, e.Status)
 	c.cfmt.Cprint(colorfmt.Faint, colorfmt.BrightWhite, "--HEADER--\n")
-	c.printHeader(e.Header, colorfmt.BrightWhite)
+	printHeader(c.cfmt, e.Header, colorfmt.BrightWhite)
 	c.cfmt.Cprint(colorfmt.Faint, colorfmt.BrightWhite, "--BODY--\n")
-	c.printBody(e.Body, colorfmt.BrightWhite)
+	printBody(c.cfmt, e.Body, colorfmt.BrightWhite)
 	c.cfmt.Cprint(colorfmt.Faint, colorfmt.Base, "====================\n")
 }
 
-func (c *console) printStatus(status int) {
-	c.cfmt.Cprintf(colorfmt.Bold, colorfmt.BrightWhite, "STATUS: ")
+func printStatus(cfmt *colorfmt.Fmt, status int) {
+	cfmt.Cprintf(colorfmt.Bold, colorfmt.BrightWhite, "STATUS: ")
 
 	color := colorfmt.BrightWhite
 	statusClass := status / 100
@@ -75,24 +94,24 @@ func (c *console) printStatus(status int) {
 		color = colorfmt.BrightRed
 	}
 
-	c.cfmt.Cprintf(colorfmt.Bold, color, "%d\n", status)
+	cfmt.Cprintf(colorfmt.Bold, color, "%d\n", status)
 }
 
-func (c *console) printBody(body string, color colorfmt.Color) {
+func printBody(cfmt *colorfmt.Fmt, body string, color colorfmt.Color) {
 	if body == "" {
-		c.cfmt.Cprint(colorfmt.Normal, color, "<empty>\n")
+		cfmt.Cprint(colorfmt.Normal, color, "<empty>\n")
 	} else {
-		c.cfmt.Cprint(colorfmt.Normal, color, body+"\n")
+		cfmt.Cprint(colorfmt.Normal, color, body+"\n")
 	}
 }
 
-func (c *console) printHeader(h map[string][]string, color colorfmt.Color) {
+func printHeader(cfmt *colorfmt.Fmt, h map[string][]string, color colorfmt.Color) {
 	for key, values := range h {
 		for _, value := range values {
-			c.cfmt.Cprintf(colorfmt.Bold, color, "%s: ", key)
-			c.cfmt.Cprintf(colorfmt.Normal, color, "%s\n", value)
+			cfmt.Cprintf(colorfmt.Bold, color, "%s: ", key)
+			cfmt.Cprintf(colorfmt.Normal, color, "%s\n", value)
 		}
 	}
 }
 
-func (c *console) Err(error) {}
+func (c *response) Err(error) {}

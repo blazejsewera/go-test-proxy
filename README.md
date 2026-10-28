@@ -210,24 +210,26 @@ The monitors let you print information to the console whenever a request or resp
 
 ### Available monitors
 
-- request / response monitor: shows basic HTTP info: method, headers, body, status
-- curl request monitor: shows the request as a curl command that you can copy and paste into another program
+- `request` / `response` monitors: shows basic HTTP info: method, headers, body, status
+- `curl` monitor: shows the request as a curl command that you can copy and paste into another program
   like Bruno or Insomnia, or run directly in a shell
 
 ### Adjusting which monitors are enabled
 
-Look at `builder.WithMonitor` and `monitor.Combine` in `main.go`.
-The former lets you set any monitor adhering to the `monitor.Monitor` interface.
-The latter lets you combine multiple monitors — they will be called sequentially
-on every intercepted request and response.
+Run the proxy with the `monitors` parameter with the monitors you want to set,
+e.g., `-monitors=request,response` if you only want to see request and response, but not curl.
+
+The order in the `monitors` parameter will decide what gets shown first:
+`-monitors=request,curl` and `-monitors=curl,request` will produce different output.
 
 ### Writing new monitors
 
 Implement the `monitor.Monitor` interface,
 then wire the new monitor up in `builder.WithMonitor(monitor.Combine([oldMonitors...], newMonitor))`.
-Look at the `monitor.console` implementation for inspiration.
-I encourage you to use the `colorfmt` package when writing to the console,
-so that you'll have a pretty, colorful output.
+When running the proxy, remember to enable the new monitor using the name you set in the `Name` method.
+
+Look at the `monitor.request` implementation for inspiration.
+Use the `colorfmt` package when writing to the console, if you want to have a pretty, colorful output.
 
 ## Install
 

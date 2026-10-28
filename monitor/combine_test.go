@@ -12,13 +12,10 @@ import (
 
 func TestCombine(t *testing.T) {
 	cfg := config.Configuration{Monitors: []string{"counting"}}
-	monitor1 := new(CountingMonitor)
-	monitor2 := new(CountingMonitor)
-	monitor3 := new(CountingMonitor)
+	countingMonitor := new(CountingMonitor)
 	alwaysOnMonitor := new(AlwaysOnMonitor)
 
-	tested := monitor.Combine(cfg, monitor1, monitor2, alwaysOnMonitor)
-	tested.Add(monitor3)
+	tested := monitor.Combine(cfg, countingMonitor, alwaysOnMonitor)
 
 	tested.HTTPEvent(event.HTTP{EventType: event.RequestEventType})
 
@@ -29,12 +26,9 @@ func TestCombine(t *testing.T) {
 	tested.Err(errors.New(""))
 	tested.Err(errors.New(""))
 
-	monitors := [...]*CountingMonitor{monitor1, monitor2, monitor3}
-	for _, m := range monitors {
-		assert.Equal(t, 1, m.requestsHandled)
-		assert.Equal(t, 2, m.responsesHandled)
-		assert.Equal(t, 3, m.errorsHandled)
-	}
+	assert.Equal(t, 1, countingMonitor.requestsHandled)
+	assert.Equal(t, 2, countingMonitor.responsesHandled)
+	assert.Equal(t, 3, countingMonitor.errorsHandled)
 	assert.True(t, alwaysOnMonitor.invoked)
 }
 
@@ -68,7 +62,7 @@ func (m *AlwaysOnMonitor) Name() string {
 	return ""
 }
 
-func (m *AlwaysOnMonitor) HTTPEvent(_ event.HTTP) {
+func (m *AlwaysOnMonitor) HTTPEvent(event.HTTP) {
 	m.invoked = true
 }
 

@@ -1,8 +1,9 @@
 package monitor
 
 import (
-	"slices"
+	"strings"
 
+	"github.com/blazejsewera/go-test-proxy/colorfmt/log"
 	"github.com/blazejsewera/go-test-proxy/config"
 	"github.com/blazejsewera/go-test-proxy/event"
 )
@@ -29,17 +30,32 @@ func (c *CombinedMonitor) Err(err error) {
 	}
 }
 
-func (c *CombinedMonitor) Add(m Monitor) {
-	c.monitors = append(c.monitors, m)
-}
-
 func Combine(cfg config.Configuration, monitors ...Monitor) *CombinedMonitor {
 	var effectiveMonitors []Monitor
-	for _, m := range monitors {
-		if slices.Contains(cfg.Monitors, m.Name()) || m.Name() == "" {
-			effectiveMonitors = append(effectiveMonitors, m)
+	monitorsByName := make(map[string]Monitor)
+	alwaysOnMonitors := make([]Monitor, 0)
+
+	for _, monitor := range monitors {
+		if monitor.Name() != "" {
+			monitorsByName[monitor.Name()] = monitor
+		} else {
+			alwaysOnMonitors = append(alwaysOnMonitors, monitor)
 		}
 	}
 
+	for _, name := range cfg.Monitors {
+		if monitor, ok := monitorsByName[name]; ok {
+			effectiveMonitors = append(effectiveMonitors, monitor)
+		}
+	}
+
+	enabledMonitorNames := make([]string, 0)
+	for _, monitor := range effectiveMonitors {
+		enabledMonitorNames = append(enabledMonitorNames, monitor.Name())
+	}
+
+	log.Printf("enabled monitors: %s\n", strings.Join(enabledMonitorNames, ","))
+
+	effectiveMonitors = append(effectiveMonitors, alwaysOnMonitors...)
 	return &CombinedMonitor{effectiveMonitors}
 }

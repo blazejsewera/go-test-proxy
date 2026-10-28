@@ -16,7 +16,8 @@ import (
 func main() {
 	cfg := config.ParseConfig()
 
-	consoleMonitor := monitor.NewConsoleMonitor(cfg.Target, cfg.Cfmt)
+	requestMonitor := monitor.NewRequestMonitor(cfg.Target, cfg.Cfmt)
+	responseMonitor := monitor.NewResponseMonitor(cfg.Target, cfg.Cfmt)
 	curlRequestMonitor := monitor.NewCurlRequestMonitor(cfg.Target, cfg.Cfmt)
 	stderrMonitor := monitor.NewStdErrMonitor(cfg.Cfmt)
 
@@ -24,7 +25,7 @@ func main() {
 		WithProxyTarget(cfg.Target).
 		WithPort(cfg.Port).
 		WithMockGroup(mock.ConfigMockGroup, mock.ConfigInfo(cfg)).
-		WithMonitor(monitor.Combine(cfg, consoleMonitor, curlRequestMonitor, stderrMonitor))
+		WithMonitor(monitor.Combine(cfg, requestMonitor, responseMonitor, curlRequestMonitor, stderrMonitor))
 
 	if cfg.EnableAllMocks {
 		builder.WithEnabledAllMocks()
@@ -45,6 +46,8 @@ func listenAndServe(server *http.Server, cfg config.Configuration) {
 		log.Printf(", on IPv6")
 		network = "tcp6"
 	}
+	log.Printf("\n")
+
 	l, err := net.Listen(network, fmt.Sprintf(":%d", cfg.Port))
 	if err != nil {
 		log.Fatalln(err)
@@ -55,8 +58,6 @@ func listenAndServe(server *http.Server, cfg config.Configuration) {
 			log.Fatalln(err)
 		}
 	}(l)
-
-	log.Printf("\n")
 	err = server.Serve(l)
 	if err != nil {
 		log.Fatalln(err)
