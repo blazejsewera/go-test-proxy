@@ -1,12 +1,18 @@
 # Go Test Proxy
 
 A Go proxy to plug between the frontend and the backend
-or between backend services for last-resort testing.
+or between backend services for mocking endpoints or last-resort testing.
 
-## Why?
+I find it useful for frontend development, when the API specs are agreed upon,
+but there is no backend implementation yet.
 
-I only want to see the requests and responses,
-without the necessity to open a debugger.
+This proxy also proved very helpful when developing mobile apps,
+especially when you need to make changes in a project with no robust integration tests.
+
+In mobile app development and between backends,
+there is usually no convenient network traffic monitoring like in the browser devtools.
+You can launch as many proxies as you want between any two components
+that communicate with HTTP.
 
 ## Prerequisites
 
@@ -248,3 +254,10 @@ You can also build `gotestproxy` for different targets, like windows/amd64:
 ```sh
 make build-windows-amd64
 ```
+
+## Why Go
+
+I used Go because it allowed me to avoid any external dependencies
+and rely only on the standard library.
+This in turn made this project more plug-and-play,
+easier to set up, more portable, and very resistant to supply chain attacks.
