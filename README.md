@@ -60,12 +60,14 @@ To print help:
 
 You'll need to change the URL in you frontend configuration
 to point to the proxy instead of a real backend instance.
+The `backendUrl` here is for illustration purposes;
+you might have something different, but look for the place where you have your real backend URL configured.
 
 If you run your frontend on the host network (without Docker):
 
 ```diff
-- backendUrl: "https://real-backend-url.in-the.cloud"
-+ backendUrl: "http://localhost:8000"
+-backendUrl: "https://real-backend-url.in-the.cloud"
++backendUrl: "http://localhost:8000"
 ```
 
 If you run your frontend in a Docker network, but the proxy is in the host network,
@@ -86,11 +88,26 @@ en0: flags=[some flags]
 because `inet` is `192.168.1.101`, we'll set the backend URL as such:
 
 ```diff
-- backendUrl: "https://real-backend-url.in-the.cloud"
-+ backendUrl: "http://192.168.1.101:8000"
+-backendUrl: "https://real-backend-url.in-the.cloud"
++backendUrl: "http://192.168.1.101:8000"
 ```
 
 and run `./gotestproxy -target=https://real-backend-url.in-the.cloud -port 8000 -color`.
+
+When setting up the proxy for the backend, look for the URL of the service you want to proxy requests to.
+You can set up many proxy instances for different services, for example:
+
+```diff
+--- a/application.yaml
++++ b/application.yaml
+ services:
+-  routingService: "https://real-routing-service.in-the.cloud"
+-  invoiceService: "https://real-invoice-service.in-the.cloud"
++  routingService: "http://localhost:8000"
++  invoiceService: "http://localhost:8001"
+```
+
+and run multiple `./gotestproxy` instances on ports `8000` and `8001`.
 
 ## Mocking certain endpoints
 
