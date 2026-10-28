@@ -34,7 +34,7 @@ func TestCurlRequestMonitor(t *testing.T) {
 			      -H "Content-Type: application/json"
 				  -H "Other-Header: \"quoted\", \"values\""
 			      -d "{\"bodyKey\":\"bodyValue\"}"
-    		      http://example.com/path?queryKey=queryValue`)
+    		      'http://example.com/path?queryKey=queryValue'`)
 
 		stdout := new(bytes.Buffer)
 		stderr := new(bytes.Buffer)

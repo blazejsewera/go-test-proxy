@@ -4,19 +4,20 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/blazejsewera/go-test-proxy/monitor"
 	"github.com/blazejsewera/go-test-proxy/proxy/internal/header"
 	"github.com/blazejsewera/go-test-proxy/proxy/internal/urls"
 )
 
-func ProxyHandler(monitor monitor.Monitor, url string) func(w http.ResponseWriter, r *http.Request) {
+func ProxyHandler(monitor monitor.Monitor, targetURL *url.URL) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		targetURL := urls.ForwardedURL(url, r.URL)
+		forwardedURL := urls.ForwardedURL(targetURL, r.URL)
 
 		r.RequestURI = ""
-		r.Host = targetURL.Host
-		r.URL = targetURL
+		r.Host = forwardedURL.Host
+		r.URL = forwardedURL
 
 		response, err := http.DefaultClient.Do(r)
 		if err != nil {

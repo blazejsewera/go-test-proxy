@@ -2,21 +2,26 @@ package urls
 
 import (
 	"net/url"
-
-	"github.com/blazejsewera/go-test-proxy/colorfmt/log"
 )
 
-func ForwardedURL(rawTargetHost string, incomingURL *url.URL) *url.URL {
-	targetURL, err := url.Parse(rawTargetHost)
-	if err != nil {
-		log.Fatalf("target host: url parse: %v\n", err)
+func ForwardedURL(targetURL *url.URL, incomingURL *url.URL) *url.URL {
+	result, _ := url.Parse(targetURL.String()) // targetURL.Clone() is available from Go 1.27
+	var path, rawPath string
+	if targetURL.Path != "" && targetURL.Path != "/" {
+		prefixedPath := targetURL.JoinPath(incomingURL.Path)
+		path = prefixedPath.Path
+		rawPath = prefixedPath.RawPath
+	} else {
+		path = incomingURL.Path
+		rawPath = incomingURL.RawPath
 	}
 
-	targetURL = targetURL.JoinPath(incomingURL.EscapedPath())
-	targetURL.RawPath = incomingURL.RawPath
-	targetURL.RawQuery = incomingURL.RawQuery
-	targetURL.Fragment = incomingURL.Fragment
-	targetURL.RawFragment = incomingURL.RawFragment
+	result.Path = path
+	result.RawPath = rawPath
 
-	return targetURL
+	result.RawQuery = incomingURL.RawQuery
+	result.Fragment = incomingURL.Fragment
+	result.RawFragment = incomingURL.RawFragment
+
+	return result
 }

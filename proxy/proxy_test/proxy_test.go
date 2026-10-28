@@ -32,7 +32,8 @@ func TestProxy(t *testing.T) {
 
 		t.Run("forwards a request with headers to the underlying backend server", func(t *testing.T) {
 			requestPath := "/test"
-			response := must.Succeed(client.Do(testrequest.New(tested.URL, requestPath)))
+			request := testrequest.New(tested.URL, requestPath)
+			response := must.Succeed(client.Do(request))
 
 			assert.Equal(t, http.StatusOK, response.StatusCode)
 			body := readBody(response.Body)

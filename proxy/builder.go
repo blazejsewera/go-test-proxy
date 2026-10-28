@@ -3,6 +3,7 @@ package proxy
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 
 	"github.com/blazejsewera/go-test-proxy/colorfmt/log"
@@ -19,6 +20,7 @@ type Mock struct {
 type Builder struct {
 	Router            *http.ServeMux
 	Monitor           monitor.Monitor
+	targetURL         *url.URL
 	port              uint16
 	mockGroups        map[string][]Mock
 	enabledMockGroups []string
@@ -44,13 +46,19 @@ func (b *Builder) WithMonitor(monitor monitor.Monitor) *Builder {
 	return b
 }
 
-func (b *Builder) WithProxyTarget(url string) *Builder {
+func (b *Builder) WithProxyTarget(rawTargetURL string) *Builder {
+	var err error
+	b.targetURL, err = url.Parse(rawTargetURL)
+	if err != nil {
+		log.Fatalf("target host: url parse: %v\n", err)
+	}
+
 	wrapperFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reqMonitor := interceptor.NewRequestMonitor(r, b.Monitor)
 		reqMonitor.MonitorRequest()
 
 		resInterceptor := interceptor.NewResponseInterceptor(w, b.Monitor)
-		internal.ProxyHandler(b.Monitor, url)(resInterceptor, r)
+		internal.ProxyHandler(b.Monitor, b.targetURL)(resInterceptor, r)
 		resInterceptor.MonitorAndForwardResponse()
 	})
 

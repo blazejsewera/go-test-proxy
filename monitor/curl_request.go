@@ -3,6 +3,8 @@ package monitor
 import (
 	"fmt"
 	"io"
+	"sort"
+	"strings"
 
 	"github.com/blazejsewera/go-test-proxy/colorfmt"
 	"github.com/blazejsewera/go-test-proxy/event"
@@ -38,14 +40,22 @@ func (c *curlRequest) writeCurlRequest(e event.HTTP) {
 }
 
 func headerToCurl(header map[string][]string) string {
-	result := ""
-	for key, values := range header {
+	keys := make([]string, len(header))
+	for k := range header {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	var result strings.Builder
+	for _, key := range keys {
+		values := header[key]
+		sort.Strings(values)
 		for _, value := range values {
 			formattedHeader := fmt.Sprintf("%s: %s", key, value)
-            result += fmt.Sprintf(" -H %q", formattedHeader)
+			result.WriteString(fmt.Sprintf(" -H %q", formattedHeader))
 		}
 	}
-	return result
+	return result.String()
 }
 
 func bodyToCurl(body string) string {
@@ -59,7 +69,7 @@ func urlPartsToCurl(host string, path string, query string) string {
 	if query == "" {
 		return host + path
 	}
-	return fmt.Sprintf("%s%s?%s", host, path, query)
+	return fmt.Sprintf("'%s%s?%s'", host, path, query)
 }
 
 func (c *curlRequest) Err(error) {}
