@@ -1,7 +1,10 @@
 # Go Test Proxy
 
-A Go proxy to plug between the frontend and the backend
-or between backend services for mocking endpoints or last-resort testing.
+A Go proxy to plug between the frontend and the backend,
+or between backend services. Useful for mocking endpoints or last-resort testing.
+
+<details>
+<summary>Intended use case</summary>
 
 I find it useful for frontend development, when the API specs are agreed upon,
 but there is no backend implementation yet.
@@ -13,6 +16,7 @@ In mobile app development and between backends,
 there is usually no convenient network traffic monitoring like in the browser devtools.
 You can launch as many proxies as you want between any two components
 that communicate with HTTP.
+</details>
 
 ## Prerequisites
 
@@ -70,6 +74,9 @@ If you run your frontend on the host network (without Docker):
 +backendUrl: "http://localhost:8000"
 ```
 
+<details>
+<summary>Frontend running in Docker</summary>
+
 If you run your frontend in a Docker network, but the proxy is in the host network,
 the easiest way is to run `ip address`, `ifconfig`, or `ipconfig`,
 and get the network card address, e.g.:
@@ -93,8 +100,13 @@ because `inet` is `192.168.1.101`, we'll set the backend URL as such:
 ```
 
 and run `./gotestproxy -target=https://real-backend-url.in-the.cloud -port 8000 -color`.
+</details>
 
-When setting up the proxy for the backend, look for the URL of the service you want to proxy requests to.
+<details>
+<summary>Setting the proxy for the backend</summary>
+
+When setting up the proxy for the backend (the backend is a client to another service),
+look for the URL of the service you want to proxy requests to.
 You can set up many proxy instances for different services, for example:
 
 ```diff
@@ -108,118 +120,14 @@ You can set up many proxy instances for different services, for example:
 ```
 
 and run multiple `./gotestproxy` instances on ports `8000` and `8001`.
+</details>
 
-## Mocking certain endpoints
+## Mocking backend responses
 
-It is easy to quickly mock endpoints with Go Test Proxy,
-simply add a new handler function to the proxy builder.
-
-Go to `main.go` and add a mock that intercepts traffic on that path
-regardless of enabled mock groups:
-
-```go
-package main
-
-// ...
-
-func main() {
-	proxy.NewBuilder().
-		// ...
-		WithMock("/mockedPath", customHandlerFunc).
-		// ...
-		Build()
-}
-```
-
-Or better yet, add a mock group:
-
-```go
-package main
-
-// ...
-
-func main() {
-	proxy.NewBuilder().
-		// ...
-		WithMockGroup("group1",
-			proxy.Mock{
-				RoutePattern: "/someRoute",
-				HandlerFunc:  someHandlerFunc,
-			},
-			proxy.Mock{
-				RoutePattern: "/someOtherRoute",
-				HandlerFunc:  someOtherHandlerFunc,
-			}).
-		WithMockGroup("group2",
-			proxy.Mock{
-				RoutePattern: "/anotherRoute",
-				HandlerFunc:  anotherHandlerFunc,
-			}).
-		// ...
-		Build()
-}
-```
+See [docs/mocking.md](docs/mocking.md).
 
 Then rebuild the project and run it with `-allMocks` arg to enable all mock groups,
 or `-mockGroups=group1,group2` arg to enable specified mock groups.
-
-A pattern I find useful is to define handlers in a new file in the `mock` package.
-For example:
-
-```go
-// file: mock/endpoint.go
-package mock
-
-import (
-	"net/http"
-)
-
-const (
-	EndpointRoute = "/endpoint"
-)
-
-func EndpointHandlerNormal(w http.ResponseWriter, r *http.Request) {
-	requestQueryParam := r.URL.Query().Get("param")
-	body := []byte(`{"key": "static value", "param": "` + requestQueryParam + `"}`)
-	w.Header().Set("Content-Type", "application/json")
-	_, err := w.Write(body)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func EndpointHandlerNotFound(w http.ResponseWriter, _ *http.Request) {
-	w.WriteHeader(http.StatusNotFound)
-}
-```
-
-```go
-// file: main.go
-package main
-
-import "github.com/blazejsewera/go-test-proxy/mock"
-
-// ...
-
-func main() {
-	proxy.NewBuilder().
-		// ...
-		WithMockGroup("endpointNormal",
-			proxy.Mock{
-				RoutePattern: mock.EndpointRoute,
-				HandlerFunc:  mock.EndpointHandlerNormal,
-			}).
-		WithMockGroup("endpointNotFound",
-			proxy.Mock{
-				RoutePattern: mock.EndpointRoute,
-				HandlerFunc:  mock.EndpointHandlerNotFound,
-			}).
-		// ...
-		Build()
-}
-```
-
-and run the proxy with `-mockGroups=endpointNormal` or `-mockGroups=endpointNotFound` depending on your needs.
 
 ## Using monitors
 
@@ -241,42 +149,33 @@ The order in the `monitors` parameter will decide what gets shown first:
 
 ### Writing new monitors
 
-Implement the `monitor.Monitor` interface,
-then wire the new monitor up in `builder.WithMonitor(monitor.Combine([oldMonitors...], newMonitor))`.
-When running the proxy, remember to enable the new monitor using the name you set in the `Name` method.
-
-Look at the `monitor.request` implementation for inspiration.
-Use the `colorfmt` package when writing to the console, if you want to have a pretty, colorful output.
+See [docs/implementing-monitor.md](docs/implementing-monitor.md).
 
 ## Install
 
-To install `gotestproxy` binary, simply run `make install`,
-setting the `PREFIX` env variable to a directory that is in your `PATH` env variable.
+When mocking endpoints, installing the proxy on the system is usually not very handy,
+but if you need to have the proxy available in your `PATH`,
+see [docs/installing.md](docs/installing.md)
 
-```sh
-PREFIX=<target_directory> make install
-```
+## Other details
 
-Uninstalling is also very simple:
+<details>
+<summary>Building for other targets</summary>
 
-```sh
-PREFIX=<previously_set_prefix> make uninstall
-```
-
-Alternatively, you can simply remove the `gotestproxy` binary — it's self-contained,
-so it's the only file to remove.
-
-## Build for different targets
-
-You can also build `gotestproxy` for different targets, like windows/amd64:
+You can build `gotestproxy` for different targets, like windows/amd64:
 
 ```sh
 make build-windows-amd64
 ```
 
-## Why Go
+Look at the `MAKEFILE` for examples.
+</details>
+
+<details>
+<summary>Why Go?</summary>
 
 I used Go because it allowed me to avoid any external dependencies
 and rely only on the standard library.
 This in turn made this project more plug-and-play,
 easier to set up, more portable, and very resistant to supply chain attacks.
+</details>
