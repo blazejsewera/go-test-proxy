@@ -5,8 +5,9 @@ description: Implementing a new handler function that returns a hardcoded (mocke
 
 # Mocking
 
-To quickly mock endpoints with Go Test Proxy,
-implement and add a new handler function to the proxy builder.
+To quickly mock endpoints with `gotestproxy`,
+implement and add a new handler function to the `proxy.Builder`
+with a `WithMock` or `WithMockGroup` method.
 
 Go to `main.go` and add a mock that intercepts traffic on that path
 regardless of enabled mock groups:
@@ -112,6 +113,6 @@ func main() {
 }
 ```
 
-Take a note of the mock groups added in the `main.go` file, and when you need to run the proxy,
+Take a note of the mock groups added in the `main.go` file, and when you need to run the `gotestproxy`,
 do it with one of the groups enabled (here: `-mockGroups=endpointNormal` or `-mockGroups=endpointNotFound`),
 depending on your needs.

@@ -1,6 +1,6 @@
 # Go Test Proxy
 
-A Go proxy to plug between the frontend and the backend,
+A proxy to plug between the frontend and the backend,
 or between backend services. Useful for mocking endpoints or last-resort testing.
 
 <details>
@@ -9,7 +9,7 @@ or between backend services. Useful for mocking endpoints or last-resort testing
 I find it useful for frontend development, when the API specs are agreed upon,
 but there is no backend implementation yet.
 
-This proxy also proved very helpful when developing mobile apps,
+It also proved very helpful when developing mobile apps,
 especially when you need to make changes in a project with no robust integration tests.
 
 In mobile app development and between backends,
@@ -60,10 +60,10 @@ To print help:
 ./gotestproxy -h
 ```
 
-### Point your frontend client to the proxy
+### Point your frontend client to a `gotestproxy` instance
 
 You'll need to change the URL in you frontend configuration
-to point to the proxy instead of a real backend instance.
+to point to a `gotestproxy` instance instead of a real backend instance.
 The `backendUrl` here is for illustration purposes;
 you might have something different, but look for the place where you have your real backend URL configured.
 
@@ -77,7 +77,8 @@ If you run your frontend on the host network (without Docker):
 <details>
 <summary>Frontend running in Docker</summary>
 
-If you run your frontend in a Docker network, but the proxy is in the host network,
+If you run your frontend in a Docker network,
+but the `gotestproxy` instance is in the host network,
 the easiest way is to run `ip address`, `ifconfig`, or `ipconfig`,
 and get the network card address, e.g.:
 
@@ -103,11 +104,11 @@ and run `./gotestproxy -target=https://real-backend-url.in-the.cloud -port 8000 
 </details>
 
 <details>
-<summary>Setting the proxy for the backend</summary>
+<summary>Setup for a backend client</summary>
 
-When setting up the proxy for the backend (the backend is a client to another service),
+When setting up `gotestproxy` for the backend (the backend is a client to another service),
 look for the URL of the service you want to proxy requests to.
-You can set up many proxy instances for different services, for example:
+You can set up many `gotestproxy` instances for different services, for example:
 
 ```diff
 --- a/application.yaml
@@ -131,7 +132,7 @@ or `-mockGroups=group1,group2` arg to enable specified mock groups.
 
 ## Using monitors
 
-The monitors let you print information to the console whenever a request or response goes through the proxy.
+The monitors let you print information to the console whenever a request or response goes through `gotestproxy`.
 
 ### Available monitors
 
@@ -141,7 +142,7 @@ The monitors let you print information to the console whenever a request or resp
 
 ### Adjusting which monitors are enabled
 
-Run the proxy with the `monitors` parameter with the monitors you want to set,
+Run `gotestproxy` with the `monitors` parameter with the monitors you want to set,
 e.g., `-monitors=request,response` if you only want to see request and response, but not curl.
 
 The order in the `monitors` parameter will decide what gets shown first:
@@ -153,8 +154,8 @@ See [docs/implementing-monitor.md](docs/implementing-monitor.md).
 
 ## Install
 
-When mocking endpoints, installing the proxy on the system is usually not very handy,
-but if you need to have the proxy available in your `PATH`,
+When mocking endpoints, installing `gotestproxy` on the system is usually not very handy,
+but if you need to have `gotestproxy` available in your `PATH`,
 see [docs/installing.md](docs/installing.md)
 
 ## Other details

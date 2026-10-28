@@ -9,7 +9,7 @@ Implement the `monitor.Monitor` interface.
 Place the implementation in the `monitor` package.
 Then, wire the new monitor up in `builder.WithMonitor(monitor.Combine([oldMonitors...], newMonitor))`.
 
-Take note that when running the proxy,
+Take note that when running `gotestproxy`,
 you have to remember to enable the new monitor using the name you set in the `Name` method.
 
 Look at the struct `monitor.request` and its implementation for reference.
