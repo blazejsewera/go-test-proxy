@@ -55,6 +55,9 @@ func main() {
 }
 ```
 
+You should only add a new file with a mock handler, preferably in the `mock` package and edit `main.go`.
+There is no need to touch any other file.
+
 ## Example
 
 A recommended pattern is to define handlers in a new file in the `mock` package.
