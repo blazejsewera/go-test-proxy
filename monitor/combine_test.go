@@ -1,7 +1,6 @@
 package monitor_test
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/blazejsewera/go-test-proxy/config"
@@ -11,31 +10,25 @@ import (
 )
 
 func TestCombine(t *testing.T) {
-	cfg := config.Configuration{Monitors: []string{"counting"}}
+	cfg := config.Configuration{Monitors: []string{"counting", "second"}}
 	countingMonitor := new(CountingMonitor)
-	alwaysOnMonitor := new(AlwaysOnMonitor)
+	secondMonitor := new(SecondMonitor)
 
-	tested := monitor.Combine(cfg, countingMonitor, alwaysOnMonitor)
+	tested := monitor.Combine(cfg, countingMonitor, secondMonitor)
 
 	tested.HTTPEvent(event.HTTP{EventType: event.RequestEventType})
 
 	tested.HTTPEvent(event.HTTP{EventType: event.ResponseEventType})
 	tested.HTTPEvent(event.HTTP{EventType: event.ResponseEventType})
 
-	tested.Err(errors.New(""))
-	tested.Err(errors.New(""))
-	tested.Err(errors.New(""))
-
 	assert.Equal(t, 1, countingMonitor.requestsHandled)
 	assert.Equal(t, 2, countingMonitor.responsesHandled)
-	assert.Equal(t, 3, countingMonitor.errorsHandled)
-	assert.True(t, alwaysOnMonitor.invoked)
+	assert.True(t, secondMonitor.invoked)
 }
 
 type CountingMonitor struct {
 	requestsHandled  int
 	responsesHandled int
-	errorsHandled    int
 }
 
 func (c *CountingMonitor) Name() string {
@@ -50,20 +43,14 @@ func (c *CountingMonitor) HTTPEvent(e event.HTTP) {
 	}
 }
 
-func (c *CountingMonitor) Err(error) {
-	c.errorsHandled++
-}
-
-type AlwaysOnMonitor struct {
+type SecondMonitor struct {
 	invoked bool
 }
 
-func (m *AlwaysOnMonitor) Name() string {
-	return ""
+func (m *SecondMonitor) Name() string {
+	return "second"
 }
 
-func (m *AlwaysOnMonitor) HTTPEvent(event.HTTP) {
+func (m *SecondMonitor) HTTPEvent(event.HTTP) {
 	m.invoked = true
 }
-
-func (m *AlwaysOnMonitor) Err(error) {}

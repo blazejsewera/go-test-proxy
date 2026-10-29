@@ -355,7 +355,6 @@ func inverseMoveToFrontTransform(v []int8, vLen int32) {
 }
 
 func readHuffmanCodeLengths(codeLengthCodeLengths []int32, numSymbols int32, codeLengths []int32, s *_State) int32 {
-	var i int32
 	var fiwz int32
 	var symbol int32 = 0
 	var prevCodeLen int32 = 8
@@ -413,7 +412,7 @@ func readHuffmanCodeLengths(codeLengthCodeLengths []int32, numSymbols int32, cod
 			if symbol+repeatDelta > numSymbols {
 				return makeError(s, -2)
 			}
-			for i = range repeatDelta {
+			for range repeatDelta {
 				codeLengths[symbol] = repeatCodeLen
 				symbol++
 			}
@@ -1104,7 +1103,6 @@ func copyFromCompoundDictionary(s *_State, fence int32) int32 {
 }
 
 func decompress(s *_State) int32 {
-	var k int32
 	var result int32
 	if s.runningState == 0 {
 		return makeError(s, -25)
@@ -1329,7 +1327,7 @@ func decompress(s *_State) int32 {
 			if (srcEnd < ringBufferMask) && (dstEnd < ringBufferMask) {
 				if copyLength < 12 || (srcEnd > dst && dstEnd > src) {
 					var numQuads = (copyLength + 3) >> 2
-					for k = range numQuads {
+					for range numQuads {
 						ringBuffer[dst] = ringBuffer[src]
 						src++
 						dst++

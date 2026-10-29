@@ -19,14 +19,13 @@ func main() {
 	requestMonitor := monitor.NewRequestMonitor(cfg.Target, cfg.Cfmt)
 	responseMonitor := monitor.NewResponseMonitor(cfg.Target, cfg.Cfmt)
 	curlRequestMonitor := monitor.NewCurlRequestMonitor(cfg.Target, cfg.Cfmt)
-	stderrMonitor := monitor.NewStdErrMonitor(cfg.Cfmt)
 
 	builder := proxy.NewBuilder().
 		WithProxyTarget(cfg.Target).
 		WithPort(cfg.Port).
 		WithMockGroup("example200", proxy.Mock{RoutePattern: mock.ExampleRoute, HandlerFunc: mock.ExampleHandler200}).
 		WithMockGroup("example404", proxy.Mock{RoutePattern: mock.ExampleRoute, HandlerFunc: mock.ExampleHandler404}).
-		WithMonitor(monitor.Combine(cfg, requestMonitor, responseMonitor, curlRequestMonitor, stderrMonitor))
+		WithMonitor(monitor.Combine(cfg, requestMonitor, responseMonitor, curlRequestMonitor))
 
 	if cfg.EnableAllMocks {
 		builder.WithEnabledAllMocks()

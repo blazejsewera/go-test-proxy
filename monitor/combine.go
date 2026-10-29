@@ -24,23 +24,12 @@ func (c *CombinedMonitor) HTTPEvent(e event.HTTP) {
 	}
 }
 
-func (c *CombinedMonitor) Err(err error) {
-	for _, m := range c.monitors {
-		m.Err(err)
-	}
-}
-
 func Combine(cfg config.Configuration, monitors ...Monitor) *CombinedMonitor {
 	var effectiveMonitors []Monitor
 	monitorsByName := make(map[string]Monitor)
-	alwaysOnMonitors := make([]Monitor, 0)
 
 	for _, monitor := range monitors {
-		if monitor.Name() != "" {
-			monitorsByName[monitor.Name()] = monitor
-		} else {
-			alwaysOnMonitors = append(alwaysOnMonitors, monitor)
-		}
+		monitorsByName[monitor.Name()] = monitor
 	}
 
 	for _, name := range cfg.Monitors {
@@ -53,9 +42,7 @@ func Combine(cfg config.Configuration, monitors ...Monitor) *CombinedMonitor {
 	for _, monitor := range effectiveMonitors {
 		enabledMonitorNames = append(enabledMonitorNames, monitor.Name())
 	}
-
 	log.Printf("enabled monitors: %s\n", strings.Join(enabledMonitorNames, ","))
 
-	effectiveMonitors = append(effectiveMonitors, alwaysOnMonitors...)
 	return &CombinedMonitor{effectiveMonitors}
 }

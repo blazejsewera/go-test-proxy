@@ -13,9 +13,6 @@ type Monitor interface {
 	// Implement it so that it produces some useful information to the console.
 	// Use the colorfmt package to produce colorful output.
 	HTTPEvent(e event.HTTP)
-
-	// Err is called whenever a non-fatal error occurs when handling a request or a response.
-	Err(err error)
 }
 
 type NopMonitor struct{}
@@ -27,5 +24,3 @@ func (n NopMonitor) Name() string {
 }
 
 func (n NopMonitor) HTTPEvent(event.HTTP) {}
-
-func (n NopMonitor) Err(error) {}

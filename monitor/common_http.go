@@ -7,16 +7,13 @@ import (
 	"github.com/blazejsewera/go-test-proxy/event"
 )
 
-type response struct {
+type request struct {
 	target string
 	cfmt   *colorfmt.Fmt
 }
 
-var _ Monitor = (*response)(nil)
-
-type request struct {
-	target string
-	cfmt   *colorfmt.Fmt
+func NewRequestMonitor(target string, cfmt *colorfmt.Fmt) Monitor {
+	return &request{target, cfmt}
 }
 
 func (r *request) Name() string {
@@ -28,8 +25,6 @@ func (r *request) HTTPEvent(e event.HTTP) {
 		r.printRequest(e)
 	}
 }
-
-func (r *request) Err(error) {}
 
 func (r *request) printRequest(e event.HTTP) {
 	r.cfmt.Cprint(colorfmt.Faint, colorfmt.Base, "\n===== REQUEST =====\n")
@@ -47,8 +42,9 @@ func (r *request) printRequest(e event.HTTP) {
 	r.cfmt.Cprint(colorfmt.Faint, colorfmt.Base, "===================\n")
 }
 
-func NewRequestMonitor(target string, cfmt *colorfmt.Fmt) Monitor {
-	return &request{target, cfmt}
+type response struct {
+	target string
+	cfmt   *colorfmt.Fmt
 }
 
 func NewResponseMonitor(target string, cfmt *colorfmt.Fmt) Monitor {
@@ -113,5 +109,3 @@ func printHeader(cfmt *colorfmt.Fmt, h map[string][]string, color colorfmt.Color
 		}
 	}
 }
-
-func (c *response) Err(error) {}

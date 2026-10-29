@@ -61,7 +61,7 @@ func (b *Builder) WithProxyTarget(rawTargetURL string) *Builder {
 		reqMonitor.MonitorRequest()
 
 		resInterceptor := interceptor.NewResponseInterceptor(w, b.Monitor)
-		internal.ProxyHandler(b.Monitor, b.targetURL)(resInterceptor, r)
+		internal.ProxyHandler(b.targetURL)(resInterceptor, r)
 		resInterceptor.MonitorAndForwardResponse()
 	})
 

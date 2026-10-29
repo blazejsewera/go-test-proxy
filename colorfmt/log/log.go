@@ -20,6 +20,10 @@ func Warnf(format string, v ...any) {
 	instance.Cerrprintf(colorfmt.Normal, colorfmt.Yellow, format, v...)
 }
 
+func Errorf(format string, v ...any) {
+	instance.Cerrprintf(colorfmt.Normal, colorfmt.Red, format, v...)
+}
+
 func Fatalf(format string, v ...any) {
 	instance.Cerrprintf(colorfmt.Normal, colorfmt.BrightRed, format, v...)
 	os.Exit(1)

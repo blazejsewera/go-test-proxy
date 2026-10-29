@@ -2,10 +2,10 @@ package interceptor
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"net/http"
 
+	"github.com/blazejsewera/go-test-proxy/colorfmt/log"
 	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/monitor"
 	"github.com/blazejsewera/go-test-proxy/proxy/internal/header"
@@ -43,12 +43,12 @@ func (i *Request) requestHTTPEvent() event.HTTP {
 func (i *Request) bodyToStringAndReader(body io.ReadCloser) (string, io.ReadCloser) {
 	bodyBytes, err := io.ReadAll(body)
 	if err != nil {
-		i.monitor.Err(fmt.Errorf("read request body: %s", err))
+		log.Errorf("read request body: %s\n", err)
 		return "", nil
 	}
 	err = body.Close()
 	if err != nil {
-		i.monitor.Err(fmt.Errorf("close request body: %s", err))
+		log.Errorf("close request body: %s\n", err)
 		return "", nil
 	}
 	return string(bodyBytes), io.NopCloser(bytes.NewReader(bodyBytes))

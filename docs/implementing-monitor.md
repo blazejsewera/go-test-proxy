@@ -9,8 +9,10 @@ Implement the `monitor.Monitor` interface.
 Place the implementation in the `monitor` package.
 Then, wire the new monitor up in `builder.WithMonitor(monitor.Combine([oldMonitors...], newMonitor))`.
 
-Take note that when running `gotestproxy`,
-you have to remember to enable the new monitor using the name you set in the `Name` method.
-
+A monitor should always write to `stdout` and not to `stderr`.
 Look at the struct `monitor.request` and its implementation for reference.
-Use the `colorfmt` package when writing to the console, if you want to have a pretty, colorful output.
+Use `*colorfmt.Fmt` when writing to `stdout`.
+
+Take note that when running `gotestproxy`,
+you have to remember to enable the new monitor with the `-monitors` parameter,
+using the name you set in the `Name` method.

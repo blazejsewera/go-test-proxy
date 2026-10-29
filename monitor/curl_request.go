@@ -72,5 +72,3 @@ func urlPartsToCurl(host string, path string, query string) string {
 	}
 	return fmt.Sprintf("%s%s?%s", host, path, query)
 }
-
-func (c *curlRequest) Err(error) {}

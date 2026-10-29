@@ -3,11 +3,11 @@ package interceptor
 import (
 	"bytes"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"net/http"
 	"slices"
 
+	"github.com/blazejsewera/go-test-proxy/colorfmt/log"
 	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/monitor"
 	"github.com/blazejsewera/go-test-proxy/proxy/internal/header"
@@ -51,7 +51,7 @@ func (i *ResponseInterceptor) MonitorAndForwardResponse() {
 	i.responseWriter.WriteHeader(i.statusCode)
 	_, err := io.Copy(i.responseWriter, &i.bodyBuffer)
 	if err != nil {
-		i.monitor.Err(fmt.Errorf("copy interceptor buffer to response writer: %s", err))
+		log.Errorf("copy interceptor buffer to response writer: %s", err)
 	}
 }
 
@@ -111,14 +111,14 @@ func (i *ResponseInterceptor) decompressGzip(compressed *bytes.Buffer) string {
 	decompressed := &bytes.Buffer{}
 	gzipReader, err := gzip.NewReader(compressed)
 	if err != nil {
-		i.monitor.Err(err)
+		log.Errorf("decompress gzip: %v\n", err)
 		return ""
 	}
 	defer must.Close(gzipReader)
 
 	_, err = io.Copy(decompressed, gzipReader)
 	if err != nil {
-		i.monitor.Err(err)
+		log.Errorf("decompress gzip: %v\n", err)
 		return ""
 	}
 
@@ -132,7 +132,7 @@ func (i *ResponseInterceptor) decompressBrotli(compressed *bytes.Buffer) string 
 
 	_, err := io.Copy(decompressed, brotliReader)
 	if err != nil {
-		i.monitor.Err(err)
+		log.Errorf("decompress brotli: %v\n", err)
 		return ""
 	}
 
