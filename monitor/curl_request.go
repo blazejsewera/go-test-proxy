@@ -3,7 +3,8 @@ package monitor
 import (
 	"fmt"
 	"io"
-	"sort"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/blazejsewera/go-test-proxy/colorfmt"
@@ -44,16 +45,12 @@ func (c *curlRequest) writeCurlRequest(e event.HTTP) {
 }
 
 func headerToCurl(header map[string][]string) string {
-	keys := make([]string, len(header))
-	for k := range header {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
+	keys := slices.Sorted(maps.Keys(header))
 
 	var result strings.Builder
 	for _, key := range keys {
 		values := header[key]
-		sort.Strings(values)
+		slices.Sort(values)
 		for _, value := range values {
 			formattedHeader := fmt.Sprintf("%s: %s", key, value)
 			result.WriteString(fmt.Sprintf(" -H %q", formattedHeader))

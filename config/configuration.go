@@ -12,16 +12,16 @@ import (
 const applicationName = "https://github.com/blazejsewera/go-test-proxy"
 
 type Configuration struct {
-	Application    string   `json:"application"`
-	Port           uint16   `json:"port"`
-	Target         string   `json:"target"`
-	Color          bool     `json:"color"`
-	MockGroups     []string `json:"mockGroups"`
-	EnableAllMocks bool     `json:"enableAllMocks"`
-	Monitors       []string `json:"monitors"`
-	IPv6           bool     `json:"ipv6"`
+	Application    string
+	Port           uint16
+	Target         string
+	Color          bool
+	MockGroups     []string
+	EnableAllMocks bool
+	Monitors       []string
+	IPv6           bool
 
-	Cfmt *colorfmt.Fmt `json:"-"`
+	Cfmt *colorfmt.Fmt
 }
 
 func ParseConfig() Configuration {

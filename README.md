@@ -179,4 +179,6 @@ I used Go because it allowed me to avoid any external dependencies
 and rely only on the standard library.
 This in turn made this project more plug-and-play,
 easier to set up, more portable, and very resistant to supply chain attacks.
+
+The Go compiler is also very fast, so rebuilding the project takes almost no time.
 </details>

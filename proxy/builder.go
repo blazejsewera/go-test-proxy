@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"fmt"
+	"maps"
 	"net/http"
 	"net/url"
 	"slices"
@@ -131,7 +132,9 @@ func (b *Builder) enableMockGroup(mocks []Mock) {
 }
 
 func (b *Builder) WithEnabledAllMocks() *Builder {
-	for _, mocks := range b.mockGroups {
+	groupNames := slices.Sorted(maps.Keys(b.mockGroups))
+	for _, name := range groupNames {
+		mocks := b.mockGroups[name]
 		b.enableMockGroup(mocks)
 	}
 	return b

@@ -58,34 +58,46 @@ func main() {
 You should only add a new file with a mock handler, preferably in the `mock` package and edit `main.go`.
 There is no need to touch any other file.
 
+You can safely add and enable mocks with the same `RoutePattern`, they will be handled gracefully with a warning.
+
 ## Example
 
 A recommended pattern is to define handlers in a new file in the `mock` package.
-For example:
+You can look at the `mock/example.go` and `main.go` files or use the examples below:
 
 ```go
-// file: mock/endpoint.go
+// file: mock/example.go
 package mock
 
 import (
+	"encoding/json"
 	"net/http"
+
+	"github.com/blazejsewera/go-test-proxy/colorfmt/log"
 )
 
 const (
-	EndpointRoute = "/endpoint"
+	ExampleRoute = "/_example"
 )
 
-func EndpointHandlerNormal(w http.ResponseWriter, r *http.Request) {
-	requestQueryParam := r.URL.Query().Get("param")
-	body := []byte(`{"key": "static value", "param": "` + requestQueryParam + `"}`)
+type response struct {
+	ResponseValue string `json:"responseValue"`
+}
+
+func ExampleHandler200(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	_, err := w.Write(body)
+
+	queryParam := r.URL.Query().Get("queryParam")
+	res := response{queryParam}
+
+	responseJSON, _ := json.Marshal(res)
+	_, err := w.Write(responseJSON)
 	if err != nil {
-		panic(err)
+		log.Fatalf("error in ExampleHandler: %v\n", err)
 	}
 }
 
-func EndpointHandlerNotFound(w http.ResponseWriter, _ *http.Request) {
+func ExampleHandler404(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 }
 ```
@@ -101,21 +113,13 @@ import "github.com/blazejsewera/go-test-proxy/mock"
 func main() {
 	proxy.NewBuilder().
 		// ...
-		WithMockGroup("endpointNormal",
-			proxy.Mock{
-				RoutePattern: mock.EndpointRoute,
-				HandlerFunc:  mock.EndpointHandlerNormal,
-			}).
-		WithMockGroup("endpointNotFound",
-			proxy.Mock{
-				RoutePattern: mock.EndpointRoute,
-				HandlerFunc:  mock.EndpointHandlerNotFound,
-			}).
+		WithMockGroup("example200", proxy.Mock{RoutePattern: mock.ExampleRoute, HandlerFunc: mock.ExampleHandler200}).
+		WithMockGroup("example404", proxy.Mock{RoutePattern: mock.ExampleRoute, HandlerFunc: mock.ExampleHandler200}).
 		// ...
 		Build()
 }
 ```
 
 Take a note of the mock groups added in the `main.go` file, and when you need to run the `gotestproxy`,
-do it with one of the groups enabled (here: `-mockGroups=endpointNormal` or `-mockGroups=endpointNotFound`),
+do it with one of the groups enabled (here: `-mockGroups=example200` or `-mockGroups=example404`),
 depending on your needs.
