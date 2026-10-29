@@ -97,11 +97,11 @@ func unpackCommandLookupTable(cmdLookup []int16) {
 	var insertLengthOffsets = make([]int32, 24)
 	var copyLengthOffsets = make([]int32, 24)
 	copyLengthOffsets[0] = 2
-	for i = 0; i < 23; i++ {
+	for i = range 23 {
 		insertLengthOffsets[i+1] = insertLengthOffsets[i] + (1 << uint(int32(insertLengthNBits[i])))
 		copyLengthOffsets[i+1] = copyLengthOffsets[i] + (1 << uint(int32(copyLengthNBits[i])))
 	}
-	for cmdCode = 0; cmdCode < 704; cmdCode++ {
+	for cmdCode = range 704 {
 		var rangeIdx = cmdCode >> 6
 		var distanceContextOffset int32 = -4
 		if rangeIdx >= 2 {
@@ -263,7 +263,7 @@ func decodeMetaBlockLength(s *_State) int32 {
 		if sizeBytes == 0 {
 			return 0
 		}
-		for i = 0; i < sizeBytes; i++ {
+		for i = range sizeBytes {
 			if s.bitOffset >= 32 {
 				s.accumulator64 = (int64(s.intBuffer[s.halfOffset]) << 32) | shr64(s.accumulator64, 32)
 				s.halfOffset++
@@ -276,7 +276,7 @@ func decodeMetaBlockLength(s *_State) int32 {
 			s.metaBlockLength += bits << uint(i*8)
 		}
 	} else {
-		for i = 0; i < sizeNibbles; i++ {
+		for i = range sizeNibbles {
 			if s.bitOffset >= 32 {
 				s.accumulator64 = (int64(s.intBuffer[s.halfOffset]) << 32) | shr64(s.accumulator64, 32)
 				s.halfOffset++
@@ -345,7 +345,7 @@ func inverseMoveToFrontTransform(v []int8, vLen int32) {
 	for i = 0; i < 256; i++ {
 		mtf[i] = i
 	}
-	for i = 0; i < vLen; i++ {
+	for i = range vLen {
 		var index = int32(v[i]) & 0xFF
 		v[i] = int8(mtf[index])
 		if index != 0 {
@@ -413,7 +413,7 @@ func readHuffmanCodeLengths(codeLengthCodeLengths []int32, numSymbols int32, cod
 			if symbol+repeatDelta > numSymbols {
 				return makeError(s, -2)
 			}
-			for i = 0; i < repeatDelta; i++ {
+			for i = range repeatDelta {
 				codeLengths[symbol] = repeatCodeLen
 				symbol++
 			}
@@ -450,7 +450,7 @@ func readSimpleHuffmanCode(alphabetSizeMax int32, alphabetSizeLimit int32, table
 	var symbols = make([]int32, 4)
 	var maxBits = 1 + log2floor(alphabetSizeMax-1)
 	var numSymbols = readFewBits(s, 2) + 1
-	for i = 0; i < numSymbols; i++ {
+	for i = range numSymbols {
 		if s.bitOffset >= 32 {
 			s.accumulator64 = (int64(s.intBuffer[s.halfOffset]) << 32) | shr64(s.accumulator64, 32)
 			s.halfOffset++
@@ -566,7 +566,7 @@ func decodeContextMap(contextMapSize int32, contextMap []int8, s *_State) int32 
 	}
 	var numTrees = decodeVarLenUnsignedByte(s) + 1
 	if numTrees == 1 {
-		for fbwz = 0; fbwz < contextMapSize; fbwz++ {
+		for fbwz = range contextMapSize {
 			contextMap[fbwz] = 0
 		}
 		return numTrees
@@ -796,7 +796,7 @@ func calculateDistanceLut(s *_State, alphabetSizeLimit int32) {
 	}
 	for i < alphabetSizeLimit {
 		var base = ndirect + ((((2 + half) << uint(bits)) - 4) << uint(npostfix)) + 1
-		for j = 0; j < postfix; j++ {
+		for j = range postfix {
 			distExtraBits[i] = int8(bits)
 			distOffset[i] = base + j
 			i++
@@ -867,7 +867,7 @@ func readMetablockHuffmanCodesAndContextMaps(s *_State) int32 {
 	}
 	var numLiteralTrees = result
 	s.trivialLiteralContext = 1
-	for j = 0; j < contextMapLength; j++ {
+	for j = range contextMapLength {
 		if int32(s.contextMap[j]) != j>>6 {
 			s.trivialLiteralContext = 0
 			break
@@ -972,7 +972,7 @@ func huffmanTreeGroupAllocSize(alphabetSizeLimit int32, n int32) int32 {
 func decodeHuffmanTreeGroup(alphabetSizeMax int32, alphabetSizeLimit int32, n int32, s *_State, group []int32) int32 {
 	var i int32
 	var next = n
-	for i = 0; i < n; i++ {
+	for i = range n {
 		group[i] = next
 		var result = readHuffmanCode(alphabetSizeMax, alphabetSizeLimit, group, i, s)
 		if result < 0 {
@@ -1329,7 +1329,7 @@ func decompress(s *_State) int32 {
 			if (srcEnd < ringBufferMask) && (dstEnd < ringBufferMask) {
 				if copyLength < 12 || (srcEnd > dst && dstEnd > src) {
 					var numQuads = (copyLength + 3) >> 2
-					for k = 0; k < numQuads; k++ {
+					for k = range numQuads {
 						ringBuffer[dst] = ringBuffer[src]
 						src++
 						dst++
@@ -1487,7 +1487,7 @@ func unpackTransforms(prefixSuffix []int8, prefixSuffixHeads []int32, transforms
 			j++
 		}
 	}
-	for i = 0; i < 363; i++ {
+	for i = range 363 {
 		transforms[i] = int32(transformsSrc[i]) - 32
 	}
 }
@@ -1666,7 +1666,7 @@ func buildHuffmanTable(tableGroup []int32, tableIdx int32, rootBits int32, codeL
 	for len = 1; len < 15; len++ {
 		offset[len+1] = offset[len] + count[len]
 	}
-	for sym = 0; sym < codeLengthsSize; sym++ {
+	for sym = range codeLengthsSize {
 		if codeLengths[sym] != 0 {
 			sorted[offset[codeLengths[sym]]] = sym
 			offset[codeLengths[sym]]++
@@ -1890,7 +1890,7 @@ func bytesToNibbles(s *_State, byteLen int32) {
 	var byteBuffer = s.byteBuffer
 	var halfLen = byteLen >> 2
 	var intBuffer = s.intBuffer
-	for i = 0; i < halfLen; i++ {
+	for i = range halfLen {
 		intBuffer[i] = (int32(byteBuffer[i*4]) & 0xFF) | ((int32(byteBuffer[(i*4)+1]) & 0xFF) << 8) | ((int32(byteBuffer[(i*4)+2]) & 0xFF) << 16) | ((int32(byteBuffer[(i*4)+3]) & 0xFF) << 24)
 	}
 }
@@ -1913,10 +1913,10 @@ func unpackLookupTable(lookup []int32, utfMap string, utfRle string) {
 		lookup[1216+i] = 2 + (i & 1)
 	}
 	var offset int32 = 1280
-	for k = 0; k < 19; k++ {
+	for k = range 19 {
 		var value = k & 3
 		var rep = int32(utfRle[k]) - 32
-		for i = 0; i < rep; i++ {
+		for i = range rep {
 			lookup[offset] = value
 			offset++
 		}
@@ -1927,7 +1927,7 @@ func unpackLookupTable(lookup []int32, utfMap string, utfRle string) {
 	}
 	lookup[1792] = 0
 	lookup[2047] = 7
-	for i = 0; i < 256; i++ {
+	for i = range 256 {
 		lookup[1536+i] = lookup[1792+i] << 3
 	}
 }
@@ -2062,7 +2062,7 @@ func unpackDictionaryData(dictionary []int8, data0 string, data1 string, skipFli
 			dict[offset] = int8(int32(dict[offset]) ^ 3)
 			offset++
 		}
-		for j = 0; j < flip; j++ {
+		for j = range flip {
 			dict[offset] = int8(int32(dict[offset]) ^ 236)
 			offset++
 		}
@@ -2092,7 +2092,7 @@ func toUsASCIIBytes(src string) []int8 {
 	var i int32
 	var n = int32(len(src))
 	var result = make([]int8, n)
-	for i = 0; i < n; i++ {
+	for i = range n {
 		result[i] = int8(src[i])
 	}
 	return result
