@@ -13,13 +13,6 @@ func Equal[T comparable](t testing.TB, expected, actual T) {
 	}
 }
 
-func True(t testing.TB, actual bool) {
-	t.Helper()
-	if !actual {
-		t.Errorf("assert: expected true but got false")
-	}
-}
-
 // EqualQuoted is the same as Equal,
 // but quotes the expected and actual strings in the assertion error message
 func EqualQuoted(t testing.TB, expected, actual string) {
@@ -31,5 +24,19 @@ func DeepEqual(t testing.TB, expected, actual any) {
 	t.Helper()
 	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("assert: not equal: expected = %v; actual = %v\n", expected, actual)
+	}
+}
+
+func True(t testing.TB, actual bool) {
+	t.Helper()
+	if !actual {
+		t.Errorf("assert: expected true but got false")
+	}
+}
+
+func Nil(t testing.TB, actual any) {
+	t.Helper()
+	if actual != nil {
+		t.Errorf("assert: expected nil but got %v", actual)
 	}
 }
