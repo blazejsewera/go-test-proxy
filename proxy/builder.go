@@ -18,21 +18,23 @@ type Mock struct {
 }
 
 type Builder struct {
-	Router            *http.ServeMux
-	Monitor           monitor.Monitor
-	targetURL         *url.URL
-	port              uint16
-	mockGroups        map[string][]Mock
-	enabledMockGroups []string
+	Router                 *http.ServeMux
+	Monitor                monitor.Monitor
+	targetURL              *url.URL
+	port                   uint16
+	mockGroups             map[string][]Mock
+	enabledMockGroups      []string
+	registeredMockPatterns []string
 }
 
 func NewBuilder() *Builder {
 	return &Builder{
-		Router:            http.NewServeMux(),
-		Monitor:           monitor.NopMonitor{},
-		port:              8000,
-		mockGroups:        make(map[string][]Mock),
-		enabledMockGroups: make([]string, 0),
+		Router:                 http.NewServeMux(),
+		Monitor:                monitor.NopMonitor{},
+		port:                   8000,
+		mockGroups:             make(map[string][]Mock),
+		enabledMockGroups:      make([]string, 0),
+		registeredMockPatterns: make([]string, 0),
 	}
 }
 
@@ -81,32 +83,39 @@ func (b *Builder) WithMock(pattern string, handlerFunc http.HandlerFunc) *Builde
 }
 
 func (b *Builder) WithMockGroup(name string, mocks ...Mock) *Builder {
+	if _, ok := b.mockGroups[name]; ok {
+		log.Warnf("mock group already exists: %s\n", name)
+		return b
+	}
+
 	b.mockGroups[name] = append(b.mockGroups[name], mocks...)
 	return b
 }
 
 func (b *Builder) WithEnabledMockGroups(groupNames []string) *Builder {
-	for _, enabledGroup := range groupNames {
-		group, ok := b.mockGroups[enabledGroup]
+	for _, groupName := range groupNames {
+		group, ok := b.mockGroups[groupName]
 		if !ok {
-			log.Warnf("enable mock group: not found: %s\n", enabledGroup)
+			log.Warnf("enable mock group: not found: %s; skipping\n", groupName)
+			continue
+		} else if slices.Contains(b.enabledMockGroups, groupName) {
+			log.Warnf("enable mock group: already enabled: %s; skipping\n", groupName)
 			continue
 		}
-		b.enableMockGroup(enabledGroup, group)
+		b.enabledMockGroups = append(b.enabledMockGroups, groupName)
+		b.enableMockGroup(group)
 	}
 
 	return b
 }
 
-func (b *Builder) enableMockGroup(name string, mocks []Mock) {
-	if slices.Contains(b.enabledMockGroups, name) {
-		log.Warnf("enable mock group: already enabled: %s\n", name)
-		return
-	}
-
-	b.enabledMockGroups = append(b.enabledMockGroups, name)
-
+func (b *Builder) enableMockGroup(mocks []Mock) {
 	for _, mock := range mocks {
+		if slices.Contains(b.registeredMockPatterns, mock.RoutePattern) {
+			log.Warnf("enable mock group: route pattern already registered: %s; skipping\n", mock.RoutePattern)
+			continue
+		}
+
 		wrapperFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			reqMonitor := interceptor.NewRequestMonitor(r, b.Monitor)
 			reqMonitor.MonitorRequest()
@@ -117,12 +126,13 @@ func (b *Builder) enableMockGroup(name string, mocks []Mock) {
 		})
 
 		b.Router.Handle(mock.RoutePattern, wrapperFunc)
+		b.registeredMockPatterns = append(b.registeredMockPatterns, mock.RoutePattern)
 	}
 }
 
 func (b *Builder) WithEnabledAllMocks() *Builder {
-	for name, mocks := range b.mockGroups {
-		b.enableMockGroup(name, mocks)
+	for _, mocks := range b.mockGroups {
+		b.enableMockGroup(mocks)
 	}
 	return b
 }

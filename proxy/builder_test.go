@@ -1,16 +1,22 @@
 package proxy_test
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/blazejsewera/go-test-proxy/colorfmt"
+	"github.com/blazejsewera/go-test-proxy/colorfmt/log"
 	"github.com/blazejsewera/go-test-proxy/config"
 	"github.com/blazejsewera/go-test-proxy/proxy"
 	"github.com/blazejsewera/go-test-proxy/test/assert"
 )
 
 func TestBuilder(t *testing.T) {
+	buf := new(bytes.Buffer)
+	log.SetFmt(colorfmt.New(false, io.Discard, buf))
 	cfg := config.Configuration{Target: "target", Port: 1}
 	endpointPattern := "/endpoint"
 
@@ -25,13 +31,16 @@ func TestBuilder(t *testing.T) {
 
 	assertServerRespondsWithTheFirstMock := func(t testing.TB, builder *proxy.Builder) {
 		t.Helper()
+		buf.Reset()
 		server := buildTestServer(builder)
+		server.Start()
 		defer server.Close()
 
 		client := server.Client()
 		res, err := client.Get(server.URL + endpointPattern)
 		assert.Nil(t, err)
 		assert.Equal(t, 201, res.StatusCode)
+		assert.StringContains(t, buf.String(), "skipping")
 	}
 
 	t.Run("enable only one mock when there are multiple mocks for one endpoint", func(t *testing.T) {
