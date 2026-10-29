@@ -9,10 +9,10 @@ import (
 	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/proxy"
 	"github.com/blazejsewera/go-test-proxy/proxy/internal/header"
-	"github.com/blazejsewera/go-test-proxy/test/assert"
-	"github.com/blazejsewera/go-test-proxy/test/must"
-	"github.com/blazejsewera/go-test-proxy/test/testrequest"
-	"github.com/blazejsewera/go-test-proxy/test/testresponse"
+	"github.com/blazejsewera/go-test-proxy/testutils/assert"
+	"github.com/blazejsewera/go-test-proxy/testutils/must"
+	"github.com/blazejsewera/go-test-proxy/testutils/testrequest"
+	"github.com/blazejsewera/go-test-proxy/testutils/testresponse"
 )
 
 func TestProxy(t *testing.T) {

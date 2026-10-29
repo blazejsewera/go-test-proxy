@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/blazejsewera/go-test-proxy/event"
-	"github.com/blazejsewera/go-test-proxy/test/must"
+	"github.com/blazejsewera/go-test-proxy/testutils/must"
 )
 
 func HTTPEventListEqual(t testing.TB, expected, actual []event.HTTP) {

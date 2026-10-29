@@ -7,7 +7,7 @@ import (
 	"github.com/blazejsewera/go-test-proxy/config"
 	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/monitor"
-	"github.com/blazejsewera/go-test-proxy/test/assert"
+	"github.com/blazejsewera/go-test-proxy/testutils/assert"
 )
 
 func TestCombine(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 	"github.com/blazejsewera/go-test-proxy/colorfmt"
 	"github.com/blazejsewera/go-test-proxy/event"
 	"github.com/blazejsewera/go-test-proxy/monitor"
-	"github.com/blazejsewera/go-test-proxy/test/assert"
+	"github.com/blazejsewera/go-test-proxy/testutils/assert"
 )
 
 func TestCurlRequestMonitor(t *testing.T) {

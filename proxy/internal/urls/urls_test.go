@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/blazejsewera/go-test-proxy/proxy/internal/urls"
-	"github.com/blazejsewera/go-test-proxy/test/assert"
+	"github.com/blazejsewera/go-test-proxy/testutils/assert"
 )
 
 func TestForwardedURL(t *testing.T) {

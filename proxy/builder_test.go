@@ -11,7 +11,7 @@ import (
 	"github.com/blazejsewera/go-test-proxy/colorfmt/log"
 	"github.com/blazejsewera/go-test-proxy/config"
 	"github.com/blazejsewera/go-test-proxy/proxy"
-	"github.com/blazejsewera/go-test-proxy/test/assert"
+	"github.com/blazejsewera/go-test-proxy/testutils/assert"
 )
 
 func TestBuilder(t *testing.T) {

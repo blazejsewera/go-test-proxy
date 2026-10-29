@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/blazejsewera/go-test-proxy/proxy/internal/header"
-	"github.com/blazejsewera/go-test-proxy/test/assert"
+	"github.com/blazejsewera/go-test-proxy/testutils/assert"
 )
 
 func TestCopyHeaders(t *testing.T) {
