@@ -8,20 +8,21 @@ const (
 )
 
 type HTTP struct {
-	EventType Type `json:"eventType"`
+	// EventType is either RequestEventType or ResponseEventType
+	EventType Type
 
-	// common data
+	// Header is present when EventType is either RequestEventType or ResponseEventType
+	Header map[string][]string
+	// Body is present when EventType is either RequestEventType or ResponseEventType
+	Body string
 
-	Header map[string][]string `json:"header"`
-	Body   string              `json:"body"`
+	// Method is present only when EventType is RequestEventType
+	Method string
+	// Path is present only when EventType is RequestEventType
+	Path string
+	// Query is present only when EventType is RequestEventType
+	Query string
 
-	// request data
-
-	Method string `json:"method"`
-	Path   string `json:"path"`
-	Query  string `json:"query"`
-
-	// response data
-
-	Status int `json:"status"`
+	// Status is present only when EventType is ResponseEventType
+	Status int
 }

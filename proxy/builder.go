@@ -140,9 +140,9 @@ func (b *Builder) WithEnabledAllMocks() *Builder {
 	return b
 }
 
-func (b *Builder) Build() *http.Server {
+func (b *Builder) Build() *http.ServeMux {
 	b.logMocks()
-	return &http.Server{Addr: b.serverAddr(), Handler: b.Router}
+	return b.Router
 }
 
 func (b *Builder) logMocks() {

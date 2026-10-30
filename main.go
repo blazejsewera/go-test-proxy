@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -33,13 +32,11 @@ func main() {
 		builder.WithEnabledMockGroups(cfg.MockGroups)
 	}
 
-	server := builder.Build()
-
-	listenAndServe(server, cfg)
-	defer shutdownServer(server)
+	router := builder.Build()
+	listenAndServe(router, cfg)
 }
 
-func listenAndServe(server *http.Server, cfg config.Configuration) {
+func listenAndServe(router *http.ServeMux, cfg config.Configuration) {
 	log.Printf("starting proxy server for target: '%s', on port: %d", cfg.Target, cfg.Port)
 	network := "tcp4"
 	if cfg.IPv6 {
@@ -52,20 +49,15 @@ func listenAndServe(server *http.Server, cfg config.Configuration) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	defer func(l net.Listener) {
-		err := l.Close()
-		if err != nil {
-			log.Fatalln(err)
-		}
-	}(l)
-	err = server.Serve(l)
+	defer shutdownListener(l)
+	err = http.Serve(l, router)
 	if err != nil {
 		log.Fatalln(err)
 	}
 }
 
-func shutdownServer(server *http.Server) {
-	err := server.Shutdown(context.Background())
+func shutdownListener(l net.Listener) {
+	err := l.Close()
 	if err != nil {
 		log.Fatalln(err)
 	}
